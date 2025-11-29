@@ -1846,3 +1846,25 @@ client.login(TOKEN);
 // ==================== KHỞI ĐỘNG AUTOLIKE NGAY KHI BOT CHẠY ====================
 
 startAutoLike();
+
+import express from "express";
+
+const app = express();
+
+const PORT = process.env.PORT || 3000;
+
+// Route ping
+
+app.get("/", (req, res) => {
+
+    res.send("Bot is running!");
+
+});
+
+// Start server
+
+app.listen(PORT, () => {
+
+    console.log(`Express server running on port ${PORT}`);
+
+});
