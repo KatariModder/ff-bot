@@ -12,6 +12,8 @@ import path from "path";
 
 import axios from "axios";
 
+import express from "express";
+
 dotenv.config();
 
 process.env.TZ = "Asia/Ho_Chi_Minh"; // 🕒 Ép múi giờ Việt Nam
@@ -1846,3 +1848,17 @@ client.login(TOKEN);
 // ==================== KHỞI ĐỘNG AUTOLIKE NGAY KHI BOT CHẠY ====================
 
 startAutoLike();
+
+// ====== EXPRESS KEEP-ALIVE ======
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Route ping
+app.get("/", (req, res) => {
+  res.send("Bot is running!");
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Ping server online on port ${PORT}`);
+});
