@@ -1509,6 +1509,110 @@ if (command === "emotes") {
     }  
 }
 
+   // ======= LỆNH ADDFRIEND =======
+if (command === "addfriend") {
+    if (!admins.includes(msg.author.id)) {
+        await msg.reply("❌ Bạn không có quyền sử dụng lệnh này!");
+        return;
+    }
+
+    const targetUid = args[0];
+    if (!targetUid) {
+        const errMsg = await msg.reply("> ❌ Sai cú pháp!\n> Ví dụ: `!addfriend 12345678`");
+        setTimeout(() => errMsg.delete().catch(() => {}), 5000);
+        return;
+    }
+
+    const loadingMsg = await msg.reply("⏳ **Đang gửi lời mời kết bạn...**");
+
+    const apiUrl = `https://danger-add-friend.vercel.app/adding_friend?uid=4179297209&password=0606DCB7D7D035FA83C9FDFB2BDAC407A04022B9F10CEBF4B58D44D26E5790C6&friend_uid=${targetUid}`;
+    try {
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+        const success = data.success || data.status === "ok" || (typeof data.message === "string" && data.message.toLowerCase().includes("success"));
+
+        const embed = new EmbedBuilder()
+            .setColor(success ? 0x9b59b6 : 0xe74c3c)
+            .setTitle(success ? "💜 Kết Bạn Thành Công!" : "❌ Kết Bạn Thất Bại!")
+            .setDescription(
+                `> Admin: <@${msg.author.id}>\n` +
+                `> UID mục tiêu: **${targetUid}**\n\n` +
+                `✨ **Trạng thái:** ${success ? "Đã gửi lời mời!" : "Không thể gửi lời mời!"}`
+            )
+            .setImage(
+                success
+                    ? "https://cdn.discordapp.com/attachments/1433822412977344643/1435248916135153676/standard_6.gif"
+                    : "https://cdn.discordapp.com/attachments/1433822412977344643/1435248916470956142/standard_7.gif"
+            )
+            .setFooter({ text: "dev Katari📌" })
+            .setTimestamp();
+
+        await loadingMsg.edit({ content: success ? "✅ **Kết quả:**" : "❌ **Lỗi:**", embeds: [embed] });
+    } catch (err) {
+        console.error(err);
+        const embed = new EmbedBuilder()
+            .setColor(0xe74c3c)
+            .setTitle("❌ API Gặp Lỗi!")
+            .setDescription(`Không thể gửi yêu cầu kết bạn.\n> ⚠️ *Chi tiết lỗi đã được ẩn để bảo mật API.*`)
+            .setImage("https://cdn.discordapp.com/attachments/1433822412977344643/1435248916470956142/standard_7.gif")
+            .setFooter({ text: "dev Katari📌" })
+            .setTimestamp();
+        await loadingMsg.edit({ embeds: [embed] });
+    }
+}
+
+   // ======= LỆNH REMOVEFRIEND =======
+if (command === "removefriend") {
+    if (!admins.includes(msg.author.id)) {
+        await msg.reply("❌ Bạn không có quyền sử dụng lệnh này!");
+        return;
+    }
+
+    const targetUid = args[0];
+    if (!targetUid) {
+        const errMsg = await msg.reply("> ❌ Sai cú pháp!\n> Ví dụ: `!removefriend 12345678`");
+        setTimeout(() => errMsg.delete().catch(() => {}), 5000);
+        return;
+    }
+
+    const loadingMsg = await msg.reply("⏳ **Đang xóa bạn bè...**");
+
+    const apiUrl = `https://danger-add-friend.vercel.app/remove_friend?uid=4179297209&password=0606DCB7D7D035FA83C9FDFB2BDAC407A04022B9F10CEBF4B58D44D26E5790C6&friend_uid=${targetUid}`;
+    try {
+        const res = await fetch(apiUrl);
+        const data = await res.json();
+        const success = data.success || data.status === "ok" || (typeof data.message === "string" && data.message.toLowerCase().includes("success"));
+
+        const embed = new EmbedBuilder()
+            .setColor(success ? 0x9b59b6 : 0xe74c3c)
+            .setTitle(success ? "💜 Xóa Bạn Thành Công!" : "❌ Xóa Bạn Thất Bại!")
+            .setDescription(
+                `> Admin: <@${msg.author.id}>\n` +
+                `> UID mục tiêu: **${targetUid}**\n\n` +
+                `✨ **Trạng thái:** ${success ? "Đã xóa khỏi danh sách bạn bè!" : "Không thể xóa!"}`
+            )
+            .setImage(
+                success
+                    ? "https://cdn.discordapp.com/attachments/1433822412977344643/1435248916135153676/standard_6.gif"
+                    : "https://cdn.discordapp.com/attachments/1433822412977344643/1435248916470956142/standard_7.gif"
+            )
+            .setFooter({ text: "dev Katari📌" })
+            .setTimestamp();
+
+        await loadingMsg.edit({ content: success ? "✅ **Kết quả:**" : "❌ **Lỗi:**", embeds: [embed] });
+    } catch (err) {
+        console.error(err);
+        const embed = new EmbedBuilder()
+            .setColor(0xe74c3c)
+            .setTitle("❌ API Gặp Lỗi!")
+            .setDescription(`Không thể xóa bạn bè.\n> ⚠️ *Chi tiết lỗi đã được ẩn để bảo mật API.*`)
+            .setImage("https://cdn.discordapp.com/attachments/1433822412977344643/1435248916470956142/standard_7.gif")
+            .setFooter({ text: "dev Katari📌" })
+            .setTimestamp();
+        await loadingMsg.edit({ embeds: [embed] });
+    }
+}
+
   // ======= QUẢN LÝ AUTOLIKE HÀNG NGÀY =======
 
   if (["startautolike", "stopautolike", "restartautolike"].includes(command)) {
