@@ -659,7 +659,7 @@ if (command === "check") {
     let nickname = "N/A";
 
     try {
-      const resInfo = await fetch(`http://raw.thug4ff.com/info?uid=${uid}`);
+      const resInfo = await fetch(`https://deepinfosukh.vercel.app/info?uid=${uid}`);
       if (resInfo.ok) {
         const dataInfo = await resInfo.json();
         region = dataInfo?.basicInfo?.region || "N/A";
