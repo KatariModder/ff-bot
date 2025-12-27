@@ -651,38 +651,44 @@ if (command === "check") {
   const processing = await msg.reply({ content: `🔍 Đang kiểm tra UID **${uid}**...`, files: [loadingGIF] });
 
   try {
-    const resCheck = await fetch(`https://api-checkban.vercel.app/check?uid=${uid}`);
+    // ===== API CHECK BAN =====
+    const resCheck = await fetch(`https://s7sallapis.vercel.app/checkban/${uid}`);
     const dataCheck = await resCheck.json();
+    const isBanned = dataCheck?.result?.is_banned === true;
 
-    let region = "N/A";
-    let lastLogin = "N/A";
-    let nickname = "N/A";
-
-    try {
-      const resInfo = await fetch(`https://deepinfosukh.vercel.app/info?uid=${uid}`);
-      if (resInfo.ok) {
-        const dataInfo = await resInfo.json();
-        region = dataInfo?.basicInfo?.region || "N/A";
-        lastLogin = formatTimestamp(dataInfo?.basicInfo?.lastLoginAt);
-        nickname = dataInfo?.basicInfo?.nickname || "N/A";
-      }
-    } catch (err) {
-      console.warn("Không lấy được region, last login hoặc nickname từ info:", err);
+    // ===== API INFO MỚI =====
+    const resInfo = await fetch(`https://bimoallapis.vercel.app/all/${uid}`);
+    let region = "N/A", lastLogin = "N/A", nickname = "N/A";
+    if (resInfo.ok) {
+      const dataInfo = await resInfo.json();
+      const basic = dataInfo?.result?.basic_info;
+      nickname = basic?.nickname || "N/A";
+      region = basic?.region || "N/A";
+      lastLogin = formatTimestamp(basic?.last_login_at, "HH:mm:ss dd/MM/yyyy");
     }
 
-    const isBanned = dataCheck["📊 Đang bị khóa?"] === true;
-    const elapsed = ((Date.now() - processing.createdTimestamp) / 1000).toFixed(2);
+    // ===== TẠO EMBED =====
+    let description = "";
+
+    if (isBanned) {
+      description = `> **Lý do:** Tài khoản này đã được xác nhận sử dụng phần mềm gian lận (pmt3).
+> **Thời gian bị cấm:** vĩnh viễn
+> **Biệt danh:** ${nickname}
+> **ID người chơi:** ${uid}
+> **Lần cuối đăng nhập:** ${lastLogin}
+> **Khu vực:** ${region}`;
+    } else {
+      description = `> **Trạng thái:** Không có đủ bằng chứng về việc sử dụng gian lận (pmt3) trên tài khoản này.
+> **Biệt danh:** ${nickname}
+> **UID người chơi:** ${uid}
+> **Lần cuối đăng nhập:** ${lastLogin}
+> **Khu vực:** ${region}`;
+    }
 
     const embed = new EmbedBuilder()
-      .setTitle(isBanned ? "⛔ Người chơi bị BAN" : "✅ Người chơi an toàn")
+      .setTitle(isBanned ? "⛔ Người chơi bị CẤM" : "✅ Người chơi an toàn")
       .setColor(isBanned ? "Red" : "Green")
-      .setDescription(`
-👤 UID: ${uid}
-💎 Biệt danh: ${nickname}
-🌏 Khu vực: ${region}
-⏰ Lần cuối đăng nhập: ${lastLogin}
-⏱️ Thời gian xử lý: ${elapsed}s
-`)
+      .setDescription(description)
       .setImage(
         isBanned
           ? "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253290639370/standard-1.gif?ex=6902f403&is=6901a283&hm=93e432097c20c8fe7a25917f8c585fa6d4cdd3c397bdb44e554b1c36c70313bd&"
@@ -691,6 +697,7 @@ if (command === "check") {
       .setFooter({ text: "Dev: Katari 📌" });
 
     await processing.edit({ content: null, embeds: [embed], files: [] });
+
   } catch (err) {
     console.error(err);
     processing.edit({ content: "🚫 Không thể kiểm tra người chơi!", files: [] });
@@ -929,13 +936,12 @@ if (command === "bio") {
 if (command === "get") {
   const token = args[0];
 
-  // Xóa tin nhắn người dùng sau 1s
-    setTimeout(() => {
-      msg.delete().catch(() => {});
-    }, 1000);
+  setTimeout(() => {
+    msg.delete().catch(() => {});
+  }, 1000);
 
   if (!token) {
-    const warn = await msg.reply("❌ Sai cú pháp! Dùng: !get token");
+    const warn = await msg.reply("❌ Sai cú pháp! Dùng: !get <eat>");
     setTimeout(() => {
       msg.delete().catch(() => {});
       warn.delete().catch(() => {});
@@ -943,18 +949,21 @@ if (command === "get") {
     return;
   }
 
-  const loadingMsg = await msg.reply("⏳ Đang lấy JWT từ token...");
+  const loadingMsg = await msg.reply("⏳ Đang lấy JWT từ EAT...");
 
   try {
-    // --- Lấy JWT từ token ---
-    const jwtRes = await fetch(`https://xp-acc-jwt-v90.vercel.app/api/get_jwt?access_token=${encodeURIComponent(token)}`);
+    // 🔥 API MỚI
+    const jwtRes = await fetch(
+      `https://danger-access-token.vercel.app/eat-to-jwt?eat_token=${encodeURIComponent(token)}`
+    );
     const jwtData = await jwtRes.json();
 
-    if (!jwtData?.BearerAuth) {
+    if (!jwtData?.jwt_token) {
       const errEmbed = new EmbedBuilder()
         .setColor("#ff0000")
-        .setDescription("❌ Không lấy được JWT từ token! Vui lòng kiểm tra lại token.")
+        .setDescription("❌ Không lấy được JWT! Vui lòng kiểm tra lại EAT.")
         .setFooter({ text: "Dev Katari 📌" });
+
       const errMsg = await msg.channel.send({ embeds: [errEmbed] });
       setTimeout(() => {
         msg.delete().catch(() => {});
@@ -964,30 +973,37 @@ if (command === "get") {
       return;
     }
 
-    const jwt = jwtData.BearerAuth; // <- định nghĩa jwt ở đây
+    // ✅ LẤY TỪ ey → TRƯỚC DẤU "
+    const jwt = jwtData.jwt_token.match(/ey[^"]+/)?.[0];
 
-    // --- Gửi riêng (DM) trực tiếp JWT ---
+    if (!jwt) {
+      throw new Error("JWT parse failed");
+    }
+
+    // --- Gửi DM ---
     try {
       const dmEmbed = new EmbedBuilder()
-        .setColor("#00ff80")
-        .setTitle("✅ JWT của bạn")
-        .setDescription(
-          `Chúc mừng! Bạn đã lấy JWT thành công.\n\nSử dụng cú pháp cập nhật bio:\n\`!bio "jwt" "newbio"\`\n\n➡️ Dùng lệnh bio ở kênh: <#1438241744893382857>`
-        )
-        .addFields({ name: "JWT", value: `${jwt}` })
-        .setFooter({ text: "Dev Katari 📌" })
-        .setTimestamp();
+  .setColor("#00ff80")
+  .setTitle("✅ JWT của bạn")
+  .setDescription(
+    `Chúc mừng! Bạn đã lấy JWT thành công.\n\n` +
+    `Sử dụng cú pháp cập nhật bio:\n` +
+    `\`!bio <jwt> <newbio>\`\n\n` +
+    `➡️ Dùng lệnh bio ở kênh: <#1450085921633468416>`
+  )
+  .addFields({ name: "JWT", value: jwt })
+  .setFooter({ text: "Dev Katari 📌" })
+  .setTimestamp();
 
       await msg.author.send({ embeds: [dmEmbed] });
 
-      const announceChannel = await msg.guild.channels.fetch("1438791394423476337");
+      const announceChannel = await msg.guild.channels.fetch("1450085870534262895");
       if (announceChannel) {
         announceChannel.send(
-          `<@${msg.author.id}>, bạn hãy check tin nhắn riêng mà tôi đã gửi cho bạn ✅ để update long bio.`
+          `<@${msg.author.id}>, bạn hãy check tin nhắn riêng để lấy **JWT** ✅`
         );
       }
 
-      // Xóa tin nhắn gốc + loading sau 5s
       setTimeout(() => {
         msg.delete().catch(() => {});
         loadingMsg.delete().catch(() => {});
@@ -995,20 +1011,12 @@ if (command === "get") {
 
     } catch (dmErr) {
       console.error(dmErr);
-      const errEmbed = new EmbedBuilder()
-        .setColor("#ff0000")
-        .setDescription("❌ Không thể gửi DM. Vui lòng bật tin nhắn riêng từ server này.")
-        .setFooter({ text: "Dev Katari 📌" });
-      await msg.channel.send({ embeds: [errEmbed] });
+      await msg.channel.send("❌ Không thể gửi DM, hãy bật tin nhắn riêng.");
     }
 
   } catch (err) {
     console.error(err);
-    const errEmbed = new EmbedBuilder()
-      .setColor("#ff0000")
-      .setDescription("❌ Có lỗi khi kết nối đến API hoặc token không hợp lệ!")
-      .setFooter({ text: "Dev Katari 📌" });
-    await msg.channel.send({ embeds: [errEmbed] });
+    await msg.channel.send("❌ Lỗi kết nối API hoặc EAT không hợp lệ!");
   }
 }
 
@@ -1101,7 +1109,7 @@ if (command === "ghost") {
       .setColor("#00A2FF")
       .setDescription(description)
       .setTimestamp()
-      .setFooter({ text: "dev Katari📌" });
+      .setFooter({ text: "Dev Katari📌" });
 
     for (const id in results) {
       let name = "Không tìm thấy";
@@ -1698,36 +1706,35 @@ async function getFullInfoEmbed(uid, user) {
   let baseData = {};
 
   try {
-    const res = await fetch(`https://deepinfosukh.vercel.app/info?uid=${uid}`);
+    const res = await fetch(`https://bimoallapis.vercel.app/all/${uid}`);
     if (res.ok) baseData = await res.json();
   } catch (err) {
     console.warn("Không lấy được baseData:", err);
   }
 
-  const basic = baseData?.playerData || {};
-  const profile = baseData?.profileInfo || {};
-  const clan = baseData?.guildInfo || {};
-  const captain = baseData?.guildOwnerInfo || {};
-  const pet = baseData?.petInfo || {};
-  const credit = baseData?.creditScoreInfo || {};
-  const social = baseData?.socialInfo || {};
+  const result = baseData?.result || {};
 
-  const color = getRankColor(basic.rank);
+  const basic   = result?.basic_info || {};
+  const captain = result?.captain_basic_info || {};
+  const clan    = result?.clan_basic_info || {};
+  const pet     = result?.pet_info || {};
+  const profile = result?.profile_info || {};
+  const credit  = result?.credit_score_info || {};
+  const social  = result?.social_info || {};
 
-  const bannerImg = `https://danger-banner.vercel.app/banner?uid=${uid}`;
+  const color = getRankColor(basic?.rank);
 
-  // ===== PRIME LEVEL (CHỈ LẤY SỐ) =====
-  const primeLevel =
-    basic?.primeLevel?.primeLevel?.match(/\d+/)?.[0] || 'not found';
+  // Banner API mới
+  const bannerImg = `https://profile.thug4ff.com/api/profile_card?uid=${uid}`;
+
+  const primeLevel = 'not found';
 
   const embed = new EmbedBuilder()
     .setColor(color)
-    .setTitle('🔎 Thông tin người chơi: ' + (basic?.nickname || uid))
-    .setAuthor({
-      name: user.username,
-      iconURL: user.displayAvatarURL({ dynamic: true }),
-    })
-    .setImage(bannerImg)
+    .setTitle(`🔎 Thông tin người chơi: **${basic?.nickname || uid}**`)
+    .setAuthor({ name: user.username }) // không hiện icon nhỏ
+    .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 256 })) // avatar lớn góc phải
+    .setImage(bannerImg) // banner
     .setFooter({ text: 'Dev: Katari 📌' });
 
   const fields = [];
@@ -1736,82 +1743,72 @@ async function getFullInfoEmbed(uid, user) {
   fields.push({
     name: '\u200b',
     value:
-      '┌  THÔNG TIN CƠ BẢN\n' +
-      '├─ Tên: ' + (basic?.nickname ?? 'not found') + '\n' +
-      '├─ UID: ' + (basic?.accountId ?? 'not found') + '\n' +
-      '├─ Cấp độ: ' + (basic?.level ?? 'not found') +
-      ' (Exp: ' + (basic?.exp ?? 'not found') + ')\n' +
-      '├─ Khu vực: ' + (basic?.region ?? 'not found') + '\n' +
-      '├─ Lượt thích: ' + (basic?.liked ?? 'not found') + '\n' +
-      '├─ Cấp prime: ' + primeLevel + '\n' +
-      '├─ Điểm uy tín: ' + (credit?.creditScore ?? 'not found') + '\n' +
-      '└─ Chữ ký: ' + (social?.signature || 'not found'),
+      '**┌  THÔNG TIN CƠ BẢN**\n' +
+      `**├─ Tên**: ${basic?.nickname ?? 'not found'}\n` +
+      `**├─ UID**: \`${basic?.account_id ?? 'not found'}\`\n` +
+      `**├─ Cấp độ**: ${basic?.level ?? 'not found'} (Exp: ${basic?.exp ?? 'not found'})\n` +
+      `**├─ Khu vực**: ${basic?.region ?? 'not found'}\n` +
+      `**├─ Lượt thích**: ${basic?.liked ?? 'not found'}\n` +
+      `**├─ Điểm uy tín**: ${credit?.credit_score ?? 'not found'}\n` +
+      `**└─ Chữ ký**: ${social?.signature || 'not found'}`,
   });
 
   // ===== HOẠT ĐỘNG TÀI KHOẢN =====
   fields.push({
     name: '\u200b',
     value:
-      '┌  HOẠT ĐỘNG TÀI KHOẢN\n' +
-      '├─ Phiên bản gần nhất: ' + (basic?.releaseVersion ?? 'not found') + '\n' +
-      '├─ Huy hiệu BP hiện tại: ' + (basic?.badgeCnt ?? 'not found') + '\n' +
-      '├─ Hạng BR: ' + (basic?.rankingPoints ?? 'not found') + '\n' +
-      '├─ Hạng CS: ' + (basic?.csRankingPoints ?? 'not found') + '\n' +
-      '├─ Ngày tạo: ' + formatTimestamp(basic?.createAt) + '\n' +
-      '└─ Lần đăng nhập gần nhất: ' + formatTimestamp(basic?.lastLoginAt),
+      '**┌  HOẠT ĐỘNG TÀI KHOẢN**\n' +
+      `**├─ Phiên bản gần nhất**: ${basic?.release_version ?? 'not found'}\n` +
+      `**├─ Huy hiệu BP hiện tại**: ${basic?.badge_cnt ?? 'not found'}\n` +
+      `**├─ Rank BR**: ${basic?.ranking_points ?? 'not found'}\n` +
+      `**├─ Rank CS**: ${basic?.cs_ranking_points ?? 'not found'}\n` +
+      `**├─ Ngày tạo**: ${formatTimestamp(basic?.create_at)}\n` +
+      `**└─ Lần đăng nhập gần nhất**: ${formatTimestamp(basic?.last_login_at)}`,
   });
 
   // ===== TỔNG QUAN =====
   fields.push({
     name: '\u200b',
     value:
-      '┌  TỔNG QUAN TÀI KHOẢN\n' +
-      '├─ Avatar ID: ' + (profile?.avatarId ?? 'not found') + '\n' +
-      '├─ Banner ID: ' + (basic?.bannerId ?? 'not found') + '\n' +
-      '├─ Pin ID: ' + (basic?.pinId ?? 'not found') + '\n' +
-      '└─ Kỹ năng trang bị: [' +
-      (profile?.equippedItems?.join(', ') || 'not found') + ']',
+      '**┌  TỔNG QUAN**\n' +
+      `**├─ Avatar ID**: ${profile?.avatar_id ?? 'not found'}\n` +
+      `**├─ Banner ID**: ${basic?.banner_id ?? 'not found'}\n` +
+      `**├─ Pin ID**: ${basic?.pin_id ?? 'not found'}\n` +
+      `**└─ Kỹ năng được trang bị**: [${profile?.equiped_skills?.join(', ') || 'not found'}]`,
   });
 
-  // ===== PET (CHỈ HIỆN KHI CÓ) =====
+  // ===== THÚ CƯNG =====
   if (pet?.id) {
     fields.push({
       name: '\u200b',
       value:
-        '┌  CHI TIẾT THÚ CƯNG\n' +
-        '├─ Đã trang bị?: ' + (pet?.isSelected ? 'Có' : 'Không') + '\n' +
-        '├─ Tên thú cưng: ' + (pet?.name ?? 'not found') + '\n' +
-        '├─ Cấp độ: ' + (pet?.level ?? 'not found') + '\n' +
-        '├─ Kinh nghiệm: ' + (pet?.exp ?? 'not found') + '\n' +
-        '└─ Skin ID: ' + (pet?.skinId ?? 'not found'),
+        '**┌  THÚ CƯNG**\n' +
+        `**├─ Đang dùng?**: ${pet?.is_selected ? 'Có' : 'Không'}\n` +
+        `**├─ Tên thú cưng**: ${pet?.name || 'Not Found'}\n` +
+        `**├─ Kinh nghiệm**: ${pet?.exp ?? 'not found'}\n` +
+        `**└─ Cấp độ**: ${pet?.level ?? 'not found'}`,
     });
   }
 
-  // ===== CLAN (CHỈ HIỆN KHI CÓ) =====
-  if (clan?.clanId) {
+  // ===== QUÂN ĐOÀN =====
+  if (clan?.clan_id) {
     fields.push({
       name: '\u200b',
       value:
-        '┌  THÔNG TIN QUÂN ĐOÀN\n' +
-        '├─ Tên quân đoàn: ' + (clan?.clanName ?? 'not found') + '\n' +
-        '├─ ID Quân đoàn: ' + clan.clanId + '\n' +
-        '├─ Cấp quân đoàn: ' + (clan?.clanLevel ?? 'not found') + '\n' +
-        '├─ Thành viên hiện tại: ' +
-        (clan?.memberNum ?? 'not found') + '/' + (clan?.capacity ?? 'not found') + '\n' +
-        '└─ Chủ quân đoàn:\n' +
-        '    ├─ Tên: ' + (captain?.nickname ?? 'not found') + '\n' +
-        '    ├─ UID: ' + (captain?.accountId ?? 'not found') + '\n' +
-        '    ├─ Cấp độ: ' + (captain?.level ?? 'not found') +
-        ' (Exp: ' + (captain?.exp ?? 'not found') + ')\n' +
-        '    ├─ Khu vực: ' + (captain?.region ?? 'not found') + '\n' +
-        '    ├─ Lượt thích: ' + (captain?.liked ?? 'not found') + '\n' +
-        '    ├─ Cấp prime: ' +
-        (captain?.primeLevel?.primeLevel?.match(/\d+/)?.[0] || 'not found') + '\n' +
-        '    ├─ Lần đăng nhập: ' + formatTimestamp(captain?.lastLoginAt) + '\n' +
-        '    ├─ Danh hiệu: ' + (captain?.title ?? 'not found') + '\n' +
-        '    ├─ Huy hiệu BP: ' + (captain?.badgeCnt ?? 'not found') + '\n' +
-        '    ├─ Hạng BR: ' + (captain?.rankingPoints ?? 'not found') + '\n' +
-        '    └─ Hạng CS: ' + (captain?.csRankingPoints ?? 'not found'),
+        '**┌  QUÂN ĐOÀN**\n' +
+        `**├─ Tên quân đoàn**: ${clan?.clan_name ?? 'not found'}\n` +
+        `**├─ ID quân đoàn**: \`${clan?.clan_id ?? 'not found'}\`\n` +
+        `**├─ Cấp**: ${clan?.clan_level ?? 'not found'}\n` +
+        `**├─ Thành viên đang online**: ${clan?.member_num ?? '0'}/${clan?.capacity ?? '0'}\n` +
+        '**└─ Thông tin chủ quân đoàn**:\n' +
+        `    **├─ Tên**: ${captain?.nickname ?? 'not found'}\n` +
+        `    **├─ UID**: \`${captain?.account_id ?? 'not found'}\`\n` +
+        `    **├─ Cấp độ**: ${captain?.level ?? 'not found'} (Exp: ${captain?.exp ?? 'not found'})\n` +
+        `    **├─ Lần đăng nhập gần nhất**: ${formatTimestamp(captain?.last_login_at)}\n` +
+        `    **├─ Danh hiệu**: ${captain?.title ?? 'not found'}\n` +
+        `    **├─ Huy hiệu BP**: ${captain?.badge_cnt ?? 'not found'}\n` +
+        `    **├─ Rank BR**: ${captain?.ranking_points ?? 'not found'}\n` +
+        `    **└─ Rank CS**: ${captain?.cs_ranking_points ?? 'not found'}`,
     });
   }
 
