@@ -1725,7 +1725,7 @@ async function getFullInfoEmbed(uid, user) {
   const color = getRankColor(basic?.rank);
 
   // Banner API mới
-  const bannerImg = `https://profile.thug4ff.com/api/profile_card?uid=${uid}`;
+  const bannerImg = `https://ffavtarbanner.vercel.app/avatar-banner?uid=${uid}&region=${basic?.region || "VN"}`;
 
   const primeLevel = 'not found';
 
@@ -1763,7 +1763,7 @@ async function getFullInfoEmbed(uid, user) {
       `**├─ Rank BR**: ${basic?.ranking_points ?? 'not found'}\n` +
       `**├─ Rank CS**: ${basic?.cs_ranking_points ?? 'not found'}\n` +
       `**├─ Ngày tạo**: ${formatTimestamp(basic?.create_at)}\n` +
-      `**└─ Lần đăng nhập gần nhất**: ${formatTimestamp(basic?.last_login_at)}`,
+      `**└─ Đăng nhập gần nhất**: ${formatTimestamp(basic?.last_login_at)}`,
   });
 
   // ===== TỔNG QUAN =====
@@ -1799,7 +1799,7 @@ async function getFullInfoEmbed(uid, user) {
         `**├─ Tên quân đoàn**: ${clan?.clan_name ?? 'not found'}\n` +
         `**├─ ID quân đoàn**: \`${clan?.clan_id ?? 'not found'}\`\n` +
         `**├─ Cấp**: ${clan?.clan_level ?? 'not found'}\n` +
-        `**├─ Thành viên đang online**: ${clan?.member_num ?? '0'}/${clan?.capacity ?? '0'}\n` +
+        `**├─ Tổng thành viên hiện tại**: ${clan?.member_num ?? '0'}/${clan?.capacity ?? '0'}\n` +
         '**└─ Thông tin chủ quân đoàn**:\n' +
         `    **├─ Tên**: ${captain?.nickname ?? 'not found'}\n` +
         `    **├─ UID**: \`${captain?.account_id ?? 'not found'}\`\n` +
