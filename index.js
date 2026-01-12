@@ -18,10 +18,6 @@ dotenv.config();
 
 process.env.TZ = "Asia/Ho_Chi_Minh"; // 🕒 Ép múi giờ Việt Nam
 
-let lastVNEvent = null;
-
-let leakInterval = null;
-
 const TOKEN = process.env.TOKEN;
 
 const PREFIX = "!";
@@ -508,114 +504,91 @@ if (command === "katari") {
   }
 
   // ======= LỆNH LIKE =======
+if (command === "like") {
+  const uid = args[0];
 
-  if (command === "like") {
+  if (!uid || isNaN(uid)) {
+    const warn = await msg.reply(
+      "❌ Sai cú pháp!\n\nVí dụ:\n```bash\n!like 12345678\n```"
+    );
 
-    const uid = args[0];
+    setTimeout(() => {
+      msg.delete().catch(() => {});
+      warn.delete().catch(() => {});
+    }, 3000);
+    return;
+  }
 
-    if (!uid || isNaN(uid)) {
+  const processing = await msg.reply({
+    content: `Đang buff like cho UID **${uid}**...`,
+  });
 
-      const warn = await msg.reply(
+  try {
+    const res = await fetch(
+      `https://likeapisikibidi.onrender.com/like?server_name=vn&uid=${uid}`
+    );
+    const data = await res.json();
 
-        "❌ Sai cú pháp!\n\nVí dụ:\n```bash\n!like 12345678\n!info 12345678\n!check 12345678```"
+    let embed;
 
-      );
+    // ===== THÀNH CÔNG =====
+    if (data.status === 1) {
+      embed = new EmbedBuilder()
+        .setTitle("BUFF LIKE THÀNH CÔNG")
+        .setDescription(
+          `> **Tên người chơi:** ${data.PlayerNickname || "Không rõ"}\n` +
+          `> **UID:** ${data.UID || uid}\n` +
+          `> **Like trước:** ${data.LikesbeforeCommand}\n` +
+          `> **Like thêm:** +${data.LikesGivenByAPI}\n` +
+          `> **Like sau:** ${data.LikesafterCommand}`
+        )
+        .setColor("Green")
+        .setThumbnail(
+          msg.author.displayAvatarURL({ dynamic: true, size: 256 })
+        )
+        .setFooter({ text: "DEVELOPED BY KATARI & SIKIBIDI" });
+
+      await processing.edit({ content: null, embeds: [embed] });
+
+    // ===== ĐÃ ĐẠT GIỚI HẠN =====
+    } else if (data.status === 2) {
+      embed = new EmbedBuilder()
+        .setTitle("ĐÃ ĐẠT GIỚI HẠN LIKE")
+        .setDescription(
+          `> **Player UID:** ${uid}\n` +
+          `> UID này đã đạt giới hạn like trong ngày.\n` +
+          `> Vui lòng quay lại vào ngày mai.`
+        )
+        .setColor("Orange")
+        .setThumbnail(
+          msg.author.displayAvatarURL({ dynamic: true, size: 256 })
+        )
+        .setFooter({ text: "DEVELOPED BY KATARI & SIKIBIDI" });
+
+      await processing.edit({ content: null, embeds: [embed] });
+
+    // ===== LỖI KHÁC =====
+    } else {
+      const errMsg = await processing.edit({
+        content: "Không thể buff like cho UID này.",
+      });
 
       setTimeout(() => {
-
-        msg.delete().catch(() => {});
-
-        warn.delete().catch(() => {});
-
-      }, 10000);
-
-      return;
-
+        errMsg.delete().catch(() => {});
+      }, 3000);
     }
+  } catch (err) {
+    console.error(err);
 
-    const processing = await msg.reply({
-
-      content: `🚀 Đang buff like cho UID **${uid}**...`,
-
-      files: [loadingGIF],
-
+    const errMsg = await processing.edit({
+      content: "Lỗi kết nối API Like.",
     });
 
-    const start = Date.now();
-
-    try {
-
-      const res = await fetch(`https://ff.mlbbai.com/like/?key=emon&uid=${uid}`);
-
-      const data = await res.json();
-
-      const elapsed = ((Date.now() - start) / 1000).toFixed(2);
-
-      let embed;
-
-      if (data.status === 1) {
-
-        embed = new EmbedBuilder()
-
-          .setTitle(`💗 Buff Like thành công cho ${data.PlayerNickname || uid}`)
-
-          .setDescription(`✅ Lượt like đã được buff thành công!`)
-
-          .addFields(
-
-            { name: "👤 UID", value: String(data.UID || uid), inline: true },
-
-            { name: "💗 Likes Trước", value: String(data.LikesbeforeCommand || 0), inline: true },
-
-            { name: "💗 Likes Sau", value: String(data.LikesafterCommand || 0), inline: true },
-
-            { name: "🚀 Likes Bởi API", value: String(data.LikesGivenByAPI || 0), inline: true },
-
-            { name: "⏱️ Thời gian xử lý", value: `${elapsed}s`, inline: true }
-
-          )
-
-          .setColor("Green")
-
-          .setFooter({ text: "Dev: Katari 📌" });
-
-      } else if (data.status === 2) {
-
-        embed = new EmbedBuilder()
-
-          .setTitle("⚠️ UID đã được buff trong ngày")
-
-          .setDescription(`UID **${uid}** đã được buff like trong ngày, hãy thử lại vào ngày mai.`)
-
-          .setColor("Orange")
-
-          .setFooter({ text: "Dev: Katari 📌" });
-
-      } else {
-
-        embed = new EmbedBuilder()
-
-          .setTitle("❌ API trả về lỗi")
-
-          .setDescription(`\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``)
-
-          .setColor("Red")
-
-          .setFooter({ text: "Dev: Katari 📌" });
-
-      }
-
-      await processing.edit({ content: null, embeds: [embed], files: [] });
-
-    } catch (err) {
-
-      console.error(err);
-
-      processing.edit({ content: "🚫 Có lỗi khi kết nối đến API Like!", files: [] });
-
-    }
-
+    setTimeout(() => {
+      errMsg.delete().catch(() => {});
+    }, 3000);
   }
+}
 
   // ======= LỆNH INFO =======
 if (command === "info") {
@@ -1624,85 +1597,6 @@ if (command === "removefriend") {
         await loadingMsg.edit({ embeds: [embed] });
     }
 }
-
-   // ===== AUTO LEAK EVENT FF VN =====
-let lastVNEvent = null;
-let leakInterval = null;
-
-const leakVNEvent = async () => {
-  const CHANNEL_ID = "1460270050962313329";
-
-  try {
-    const res = await axios.get(
-      "https://danger-event-info.vercel.app/event?region=vn&key=DANGERxEVENT",
-      { timeout: 10000 }
-    );
-
-    const events = res.data?.events;
-    if (!events || !events.length) return;
-
-    const event = events[0];
-    if (!event?.name) return;
-
-    // nếu trùng event trước thì bỏ
-    if (event.name === lastVNEvent) return;
-    lastVNEvent = event.name;
-
-    const channel = await client.channels.fetch(CHANNEL_ID);
-    if (!channel) return;
-
-    const embed = new EmbedBuilder()
-      .setTitle("🔥 LEAK SỰ KIỆN FREE FIRE (VN)")
-      .setDescription(
-        `🎁 **${event.name}**\n` +
-        `🕒 Thời gian: ${event.time || "Không rõ"}\n` +
-        `🌍 Server: Việt Nam`
-      )
-      .setColor("Red")
-      .setTimestamp();
-
-    const image =
-      event.image || event.banner || event.img || event.thumbnail;
-    if (image) embed.setImage(image);
-
-    await channel.send({ embeds: [embed] });
-
-  } catch (err) {
-    console.error("[AUTO LEAK ERROR]", err.message);
-  }
-};
-
-// ===== COMMAND =====
-client.on("messageCreate", async (msg) => {
-  if (msg.author.bot) return;
-  if (!msg.content.startsWith(PREFIX)) return;
-
-  const args = msg.content.slice(PREFIX.length).trim().split(/ +/);
-  const command = args.shift().toLowerCase();
-
-  // BẬT AUTO LEAK
-  if (command === "leaksukien") {
-    if (leakInterval) {
-      return msg.reply("⚠️ Auto leak sự kiện đang chạy rồi!");
-    }
-
-    await msg.reply("✅ Đã bật auto leak sự kiện Free Fire VN!");
-
-    leakVNEvent();
-    leakInterval = setInterval(leakVNEvent, 10 * 60 * 1000);
-  }
-
-  // TẮT AUTO LEAK
-  if (command === "stopleak") {
-    if (!leakInterval) {
-      return msg.reply("⚠️ Auto leak chưa được bật.");
-    }
-
-    clearInterval(leakInterval);
-    leakInterval = null;
-    msg.reply("🛑 Đã tắt auto leak sự kiện Free Fire VN.");
-  }
-});
 
   // ======= QUẢN LÝ AUTOLIKE HÀNG NGÀY =======
 
