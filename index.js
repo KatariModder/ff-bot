@@ -18,6 +18,10 @@ dotenv.config();
 
 process.env.TZ = "Asia/Ho_Chi_Minh"; // 🕒 Ép múi giờ Việt Nam
 
+let lastVNEvent = null;
+
+let leakInterval = null;
+
 const TOKEN = process.env.TOKEN;
 
 const PREFIX = "!";
@@ -1620,6 +1624,85 @@ if (command === "removefriend") {
         await loadingMsg.edit({ embeds: [embed] });
     }
 }
+
+   // ===== AUTO LEAK EVENT FF VN =====
+let lastVNEvent = null;
+let leakInterval = null;
+
+const leakVNEvent = async () => {
+  const CHANNEL_ID = "1460270050962313329";
+
+  try {
+    const res = await axios.get(
+      "https://danger-event-info.vercel.app/event?region=vn&key=DANGERxEVENT",
+      { timeout: 10000 }
+    );
+
+    const events = res.data?.events;
+    if (!events || !events.length) return;
+
+    const event = events[0];
+    if (!event?.name) return;
+
+    // nếu trùng event trước thì bỏ
+    if (event.name === lastVNEvent) return;
+    lastVNEvent = event.name;
+
+    const channel = await client.channels.fetch(CHANNEL_ID);
+    if (!channel) return;
+
+    const embed = new EmbedBuilder()
+      .setTitle("🔥 LEAK SỰ KIỆN FREE FIRE (VN)")
+      .setDescription(
+        `🎁 **${event.name}**\n` +
+        `🕒 Thời gian: ${event.time || "Không rõ"}\n` +
+        `🌍 Server: Việt Nam`
+      )
+      .setColor("Red")
+      .setTimestamp();
+
+    const image =
+      event.image || event.banner || event.img || event.thumbnail;
+    if (image) embed.setImage(image);
+
+    await channel.send({ embeds: [embed] });
+
+  } catch (err) {
+    console.error("[AUTO LEAK ERROR]", err.message);
+  }
+};
+
+// ===== COMMAND =====
+client.on("messageCreate", async (msg) => {
+  if (msg.author.bot) return;
+  if (!msg.content.startsWith(PREFIX)) return;
+
+  const args = msg.content.slice(PREFIX.length).trim().split(/ +/);
+  const command = args.shift().toLowerCase();
+
+  // BẬT AUTO LEAK
+  if (command === "leaksukien") {
+    if (leakInterval) {
+      return msg.reply("⚠️ Auto leak sự kiện đang chạy rồi!");
+    }
+
+    await msg.reply("✅ Đã bật auto leak sự kiện Free Fire VN!");
+
+    leakVNEvent();
+    leakInterval = setInterval(leakVNEvent, 10 * 60 * 1000);
+  }
+
+  // TẮT AUTO LEAK
+  if (command === "stopleak") {
+    if (!leakInterval) {
+      return msg.reply("⚠️ Auto leak chưa được bật.");
+    }
+
+    clearInterval(leakInterval);
+    leakInterval = null;
+    msg.reply("🛑 Đã tắt auto leak sự kiện Free Fire VN.");
+  }
+});
 
   // ======= QUẢN LÝ AUTOLIKE HÀNG NGÀY =======
 
