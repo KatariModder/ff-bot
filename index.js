@@ -525,7 +525,7 @@ if (command === "like") {
 
   try {
     const res = await fetch(
-      `https://likeapisikibidi.onrender.com/like?server_name=vn&uid=${uid}`
+      `https://sikibidifreeeapilike.onrender.com/like?server_name=vn&uid=${uid}`
     );
     const data = await res.json();
 
