@@ -316,7 +316,7 @@ if (command === "katari") {
         {
           name: "ℹ️ THÔNG TIN KHÁC",
           value: `
-📦 Phiên bản bot: **v3.0.3**
+📦 Phiên bản bot: **v4.0.0**
 
 💬 Gõ \`!katari help\` bất kỳ lúc nào để xem lại danh sách lệnh.
 `,
@@ -610,9 +610,11 @@ if (command === "info") {
     // Gửi embed text
     await processing.edit({ content: null, embeds: [embed], files: [] });
 
-    // Gửi ảnh outfit riêng, hiển thị trực tiếp
-    const outfitImg = `https://ffoutfitapis.vercel.app/outfit-image?uid=${uid}&region=${embed.data?.description?.region || "vn"}&key=99day`;
-    await msg.channel.send({ embeds: [{ image: { url: outfitImg } }] });
+    // ✅ Outfit API mới (KHÔNG sửa gì khác)
+    const outfitImg = `https://outfit.sukhdaku.qzz.io/api/v1/profile?uid=${uid}&bg=3`;
+    await msg.channel.send({
+      embeds: [{ image: { url: outfitImg } }]
+    });
 
   } catch (err) {
     console.error(err);
@@ -625,7 +627,10 @@ if (command === "check") {
   const uid = args[0];
   if (!uid || isNaN(uid)) return;
 
-  const processing = await msg.reply({ content: `🔍 Đang kiểm tra UID **${uid}**...`, files: [loadingGIF] });
+  const processing = await msg.reply({
+    content: `🔍 Đang kiểm tra UID **${uid}**...`,
+    files: [loadingGIF]
+  });
 
   try {
     // ===== API CHECK BAN =====
@@ -633,43 +638,46 @@ if (command === "check") {
     const dataCheck = await resCheck.json();
     const isBanned = dataCheck?.result?.is_banned === true;
 
-    // ===== API INFO MỚI =====
+    // ===== API INFO =====
     const resInfo = await fetch(`https://bimoallapis.vercel.app/all/${uid}`);
     let region = "N/A", lastLogin = "N/A", nickname = "N/A";
+
     if (resInfo.ok) {
       const dataInfo = await resInfo.json();
-      const basic = dataInfo?.result?.basic_info;
-      nickname = basic?.nickname || "N/A";
-      region = basic?.region || "N/A";
-      lastLogin = formatTimestamp(basic?.last_login_at, "HH:mm:ss dd/MM/yyyy");
+      const basic = dataInfo?.result?.basic_info || {};
+      nickname = basic.nickname || "N/A";
+      region = basic.region || "N/A";
+      lastLogin = formatTimestamp(basic.last_login_at, "HH:mm:ss dd/MM/yyyy");
     }
 
-    // ===== TẠO EMBED =====
-    let description = "";
-
-    if (isBanned) {
-      description = `> **Lý do:** Tài khoản này đã được xác nhận sử dụng phần mềm gian lận (pmt3).
-> **Thời gian bị cấm:** vĩnh viễn
+    // ===== NỘI DUNG =====
+    const description = isBanned
+      ? `> **Lý do:** Tài khoản này đã được xác nhận sử dụng phần mềm gian lận (pmt3)
+> **Thời gian bị cấm:** Vĩnh viễn
 > **Biệt danh:** ${nickname}
-> **ID người chơi:** ${uid}
+> **UID:** ${uid}
+> **Lần cuối đăng nhập:** ${lastLogin}
+> **Khu vực:** ${region}`
+      : `> **Trạng thái:** Không phát hiện gian lận (pmt3)
+> **Biệt danh:** ${nickname}
+> **UID:** ${uid}
 > **Lần cuối đăng nhập:** ${lastLogin}
 > **Khu vực:** ${region}`;
-    } else {
-      description = `> **Trạng thái:** Không có đủ bằng chứng về việc sử dụng gian lận (pmt3) trên tài khoản này.
-> **Biệt danh:** ${nickname}
-> **UID người chơi:** ${uid}
-> **Lần cuối đăng nhập:** ${lastLogin}
-> **Khu vực:** ${region}`;
-    }
 
     const embed = new EmbedBuilder()
       .setTitle(isBanned ? "⛔ Người chơi bị CẤM" : "✅ Người chơi an toàn")
       .setColor(isBanned ? "Red" : "Green")
       .setDescription(description)
+
+      // 👉 AVATAR DISCORD GÓC PHẢI (GIỐNG HÀM INFO)
+      .setThumbnail(
+        msg.author.displayAvatarURL({ dynamic: true, size: 256 })
+      )
+
       .setImage(
         isBanned
-          ? "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253290639370/standard-1.gif?ex=6902f403&is=6901a283&hm=93e432097c20c8fe7a25917f8c585fa6d4cdd3c397bdb44e554b1c36c70313bd&"
-          : "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253886361610/standard-2.gif?ex=6902f403&is=6901a283&hm=c29296c5f967f5d37d112bcf304d67ffa96e3248597d6f2edebb51883c6f9b93&"
+          ? "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253290639370/standard-1.gif"
+          : "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253886361610/standard-2.gif"
       )
       .setFooter({ text: "Dev: Katari 📌" });
 
@@ -677,7 +685,10 @@ if (command === "check") {
 
   } catch (err) {
     console.error(err);
-    processing.edit({ content: "🚫 Không thể kiểm tra người chơi!", files: [] });
+    processing.edit({
+      content: "🚫 Không thể kiểm tra người chơi!",
+      files: []
+    });
   }
 }
 
@@ -1055,7 +1066,7 @@ if (command === "spam") {
 }
 // ======= HẾT LỆNH SPAM =======
 
-   // ===================== LỆNH !GHOST (tối giản) =====================
+   // ===================== LỆNH !GHOST (EMBED MỚI) =====================
 if (command === "ghost") {
   const code = args[0];
 
@@ -1068,25 +1079,26 @@ if (command === "ghost") {
     return;
   }
 
-  // Tin nhắn loading đơn giản
-  const loading = await msg.reply(`> 👻 Đang ghost đến teamcode **${code}**...`);
+  // Loading
+  const loading = await msg.reply(
+    `👻 **Đang ghost teamcode...**\n> TeamCode: **${code}**`
+  );
 
   try {
-    // Gọi API
     const url = `https://ghost-code-amph.onrender.com/execute_command_all?command=/bngx=${code}`;
     const res = await axios.get(url);
     const results = res.data?.results || {};
 
-    // Embed kết quả
-    let description = `> Những tài khoản đã ghost trong teamcode **${code}**\n`;
-    description += `> —————————————————————————————————————————————————————————————————————————\n`;
-
     const embed = new EmbedBuilder()
-      .setTitle("👻 Ghost TeamCode")
-      .setColor("#00A2FF")
-      .setDescription(description)
-      .setTimestamp()
-      .setFooter({ text: "Dev Katari📌" });
+      .setColor(0x00c3ff)
+      .setTitle("👻 Ghost TeamCode thành công")
+      .setDescription(
+        `> Người yêu cầu: <@${msg.author.id}>\n` +
+        `> TeamCode: **${code}**\n\n` +
+        `📋 **Danh sách tài khoản đã ghost:**`
+      )
+      .setFooter({ text: "Dev Katari📌" })
+      .setTimestamp();
 
     for (const id in results) {
       let name = "Không tìm thấy";
@@ -1094,31 +1106,34 @@ if (command === "ghost") {
       if (match?.[1]) name = match[1].trim();
 
       embed.addFields({
-        name: `> 🆔 ID: ${id}`,
-        value: `> 👤 Tên: **${name}**`,
+        name: `🆔 UID: ${id}`,
+        value: `👤 Tên: **${name}**`,
         inline: false
       });
     }
 
-    // Hiển thị embed đầy đủ
     await loading.edit({
-      content: `> 👻 Ghost hoàn tất teamcode **${code}**`,
+      content: "✅ **Ghost hoàn tất!**",
       embeds: [embed]
     });
 
   } catch (err) {
-    // Embed lỗi
     const errorEmbed = new EmbedBuilder()
-      .setTitle("⚠️ Ghost TeamCode - Lỗi")
-      .setColor("#FF0000")
+      .setColor(0xff0000)
+      .setTitle("❌ Ghost TeamCode thất bại")
       .setDescription(
-        `> ❌ Đã xảy ra lỗi khi ghost teamcode **${code}**\n` +
-        `> Vui lòng thử lại sau hoặc liên hệ dev Katari📌`
+        `> TeamCode: **${code}**\n` +
+        `> API không phản hồi hoặc gặp lỗi.\n\n` +
+        `⚠️ Vui lòng thử lại sau.`
       )
-      .setTimestamp()
-      .setFooter({ text: "Dev Katari📌" });
+      .setFooter({ text: "Dev Katari📌" })
+      .setTimestamp();
 
-    await loading.edit({ content: null, embeds: [errorEmbed] });
+    await loading.edit({
+      content: null,
+      embeds: [errorEmbed]
+    });
+
     setTimeout(() => loading.delete().catch(() => {}), 5000);
   }
 }
@@ -1146,9 +1161,10 @@ if (command === "team5" || command === "team6") { // bỏ dấu "!" nếu đã p
         `> Chuẩn bị mời **UID: ${uid}**`
     );
 
+    // ✅ CHỈ THAY API TEAM5 – TEAM6 GIỮ NGUYÊN
     const apiUrl =
         command === "team5"
-            ? `https://ff-community-apiemoteessss.onrender.com/5?uid=${uid}&region=VN`
+            ? `https://team-create.onrender.com/5?uid=${uid}`
             : `https://ff-community-apiemoteessss.onrender.com/6?uid=${uid}&region=VN`;
 
     try {
@@ -1701,91 +1717,91 @@ async function getFullInfoEmbed(uid, user) {
 
   const color = getRankColor(basic?.rank);
 
-  // Banner API mới
-  const bannerImg = `https://ffavtarbanner.vercel.app/avatar-banner?uid=${uid}&region=${basic?.region || "VN"}`;
-
-  const primeLevel = 'not found';
+  // ✅ CHỈ THAY API BANNER
+  const bannerImg = `https://card.sukhdaku.qzz.io/api/profile?uid=${uid}`;
 
   const embed = new EmbedBuilder()
     .setColor(color)
     .setTitle(`🔎 Thông tin người chơi: **${basic?.nickname || uid}**`)
-    .setAuthor({ name: user.username }) // không hiện icon nhỏ
-    .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 256 })) // avatar lớn góc phải
-    .setImage(bannerImg) // banner
-    .setFooter({ text: 'Dev: Katari 📌' });
+    .setAuthor({ name: user.username })
+    .setThumbnail(user.displayAvatarURL({ dynamic: true, size: 256 }))
+    .setImage(bannerImg)
+    .setFooter({ text: "Dev: Katari 📌" });
 
   const fields = [];
 
   // ===== THÔNG TIN CƠ BẢN =====
   fields.push({
-    name: '\u200b',
+    name: "\u200b",
     value:
-      '**┌  THÔNG TIN CƠ BẢN**\n' +
-      `**├─ Tên**: ${basic?.nickname ?? 'not found'}\n` +
-      `**├─ UID**: \`${basic?.account_id ?? 'not found'}\`\n` +
-      `**├─ Cấp độ**: ${basic?.level ?? 'not found'} (Exp: ${basic?.exp ?? 'not found'})\n` +
-      `**├─ Khu vực**: ${basic?.region ?? 'not found'}\n` +
-      `**├─ Lượt thích**: ${basic?.liked ?? 'not found'}\n` +
-      `**├─ Điểm uy tín**: ${credit?.credit_score ?? 'not found'}\n` +
-      `**└─ Chữ ký**: ${social?.signature || 'not found'}`,
+      "**┌  THÔNG TIN CƠ BẢN**\n" +
+      `**├─ Tên**: ${basic?.nickname ?? "not found"}\n` +
+      `**├─ UID**: \`${basic?.account_id ?? "not found"}\`\n` +
+      `**├─ Cấp độ**: ${basic?.level ?? "not found"} (Exp: ${basic?.exp ?? "not found"})\n` +
+      `**├─ Khu vực**: ${basic?.region ?? "not found"}\n` +
+      `**├─ Lượt thích**: ${basic?.liked ?? "not found"}\n` +
+      `**├─ Điểm uy tín**: ${credit?.credit_score ?? "not found"}\n` +
+      `**└─ Chữ ký**: ${social?.signature || "not found"}`
   });
 
   // ===== HOẠT ĐỘNG TÀI KHOẢN =====
   fields.push({
-    name: '\u200b',
+    name: "\u200b",
     value:
-      '**┌  HOẠT ĐỘNG TÀI KHOẢN**\n' +
-      `**├─ Phiên bản gần nhất**: ${basic?.release_version ?? 'not found'}\n` +
-      `**├─ Huy hiệu BP hiện tại**: ${basic?.badge_cnt ?? 'not found'}\n` +
-      `**├─ Rank BR**: ${basic?.ranking_points ?? 'not found'}\n` +
-      `**├─ Rank CS**: ${basic?.cs_ranking_points ?? 'not found'}\n` +
+      "**┌  HOẠT ĐỘNG TÀI KHOẢN**\n" +
+      `**├─ Phiên bản gần nhất**: ${basic?.release_version ?? "not found"}\n` +
+      `**├─ Huy hiệu BP hiện tại**: ${basic?.badge_cnt ?? "not found"}\n` +
+      `**├─ Rank BR**: ${basic?.ranking_points ?? "not found"}\n` +
+      `**├─ Rank CS**: ${basic?.cs_ranking_points ?? "not found"}\n` +
       `**├─ Ngày tạo**: ${formatTimestamp(basic?.create_at)}\n` +
-      `**└─ Đăng nhập gần nhất**: ${formatTimestamp(basic?.last_login_at)}`,
+      `**└─ Đăng nhập gần nhất**: ${formatTimestamp(basic?.last_login_at)}`
   });
 
   // ===== TỔNG QUAN =====
   fields.push({
-    name: '\u200b',
+    name: "\u200b",
     value:
-      '**┌  TỔNG QUAN**\n' +
-      `**├─ Avatar ID**: ${profile?.avatar_id ?? 'not found'}\n` +
-      `**├─ Banner ID**: ${basic?.banner_id ?? 'not found'}\n` +
-      `**├─ Pin ID**: ${basic?.pin_id ?? 'not found'}\n` +
-      `**└─ Kỹ năng được trang bị**: [${profile?.equiped_skills?.join(', ') || 'not found'}]`,
+      "**┌  TỔNG QUAN**\n" +
+      `**├─ Avatar ID**: ${profile?.avatar_id ?? "not found"}\n` +
+      `**├─ Banner ID**: ${basic?.banner_id ?? "not found"}\n` +
+      `**├─ Pin ID**: ${basic?.pin_id ?? "not found"}\n` +
+      `**└─ Kỹ năng được trang bị**: [${
+        profile?.equiped_skills?.join(", ") || "not found"
+      }]`
   });
 
   // ===== THÚ CƯNG =====
   if (pet?.id) {
     fields.push({
-      name: '\u200b',
+      name: "\u200b",
       value:
-        '**┌  THÚ CƯNG**\n' +
-        `**├─ Đang dùng?**: ${pet?.is_selected ? 'Có' : 'Không'}\n` +
-        `**├─ Tên thú cưng**: ${pet?.name || 'Not Found'}\n` +
-        `**├─ Kinh nghiệm**: ${pet?.exp ?? 'not found'}\n` +
-        `**└─ Cấp độ**: ${pet?.level ?? 'not found'}`,
+        "**┌  THÚ CƯNG**\n" +
+        `**├─ Đang dùng?**: ${pet?.is_selected ? "Có" : "Không"}\n` +
+        `**├─ Tên thú cưng**: ${pet?.name || "not found"}\n` +
+        `**├─ Kinh nghiệm**: ${pet?.exp ?? "not found"}\n` +
+        `**└─ Cấp độ**: ${pet?.level ?? "not found"}`
     });
   }
 
   // ===== QUÂN ĐOÀN =====
   if (clan?.clan_id) {
     fields.push({
-      name: '\u200b',
+      name: "\u200b",
       value:
-        '**┌  QUÂN ĐOÀN**\n' +
-        `**├─ Tên quân đoàn**: ${clan?.clan_name ?? 'not found'}\n` +
-        `**├─ ID quân đoàn**: \`${clan?.clan_id ?? 'not found'}\`\n` +
-        `**├─ Cấp**: ${clan?.clan_level ?? 'not found'}\n` +
-        `**├─ Tổng thành viên hiện tại**: ${clan?.member_num ?? '0'}/${clan?.capacity ?? '0'}\n` +
-        '**└─ Thông tin chủ quân đoàn**:\n' +
-        `    **├─ Tên**: ${captain?.nickname ?? 'not found'}\n` +
-        `    **├─ UID**: \`${captain?.account_id ?? 'not found'}\`\n` +
-        `    **├─ Cấp độ**: ${captain?.level ?? 'not found'} (Exp: ${captain?.exp ?? 'not found'})\n` +
+        "**┌  QUÂN ĐOÀN**\n" +
+        `**├─ Tên quân đoàn**: ${clan?.clan_name ?? "not found"}\n` +
+        `**├─ ID quân đoàn**: \`${clan?.clan_id ?? "not found"}\`\n` +
+        `**├─ Cấp**: ${clan?.clan_level ?? "not found"}\n` +
+        `**├─ Thành viên**: ${clan?.member_num ?? "0"}/${clan?.capacity ?? "0"}\n` +
+        "**└─ Thông tin chủ quân đoàn**:\n" +
+        `    **├─ Tên**: ${captain?.nickname ?? "not found"}\n` +
+        `    **├─ UID**: \`${captain?.account_id ?? "not found"}\`\n` +
+        `    **├─ Cấp độ**: ${captain?.level ?? "not found"} (Exp: ${captain?.exp ?? "not found"})\n` +
         `    **├─ Lần đăng nhập gần nhất**: ${formatTimestamp(captain?.last_login_at)}\n` +
-        `    **├─ Danh hiệu**: ${captain?.title ?? 'not found'}\n` +
-        `    **├─ Huy hiệu BP**: ${captain?.badge_cnt ?? 'not found'}\n` +
-        `    **├─ Rank BR**: ${captain?.ranking_points ?? 'not found'}\n` +
-        `    **└─ Rank CS**: ${captain?.cs_ranking_points ?? 'not found'}`,
+        `    **├─ Danh hiệu**: ${captain?.title ?? "not found"}\n` +
+        `    **├─ Huy hiệu BP**: ${captain?.badge_cnt ?? "not found"}\n` +
+        `    **├─ Rank BR**: ${captain?.ranking_points ?? "not found"}\n` +
+        `    **└─ Rank CS**: ${captain?.cs_ranking_points ?? "not found"}`
     });
   }
 
