@@ -1614,6 +1614,105 @@ if (command === "removefriend") {
     }
 }
 
+   // ======= LỆNH SEARCH =======
+if (command === "search") {
+  const region = args[0];
+  const nickname = args.slice(1).join(" ");
+
+  // ❌ Sai cú pháp
+  if (!region || !nickname) {
+    const err = await msg.reply(
+      "> ❌ Sai cú pháp!\n> Ví dụ: !search vn Katari"
+    );
+
+    setTimeout(() => {
+      err.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+
+    return;
+  }
+
+  const loading = await msg.reply(
+    `🔍 Đang tìm người chơi **${nickname}** tại khu vực **${region.toUpperCase()}**...`
+  );
+
+  try {
+    const apiUrl = `http://danger-search-nickname.vercel.app/name/${region}?nickname=${encodeURIComponent(nickname)}`;
+    const res = await fetch(apiUrl);
+    if (!res.ok) throw new Error("API lỗi");
+
+    const data = await res.json();
+    const results = data?.results || [];
+
+    // ❌ Không có kết quả
+    if (results.length === 0) {
+      await loading.edit("❌ Không tìm thấy người chơi nào.");
+
+      setTimeout(() => {
+        loading.delete().catch(() => {});
+        msg.delete().catch(() => {});
+      }, 5000);
+
+      return;
+    }
+
+    await loading.delete().catch(() => {});
+
+    let index = 0;
+
+    for (const acc of results) {
+      index++;
+
+      const uid = acc.accountId;
+      const name = acc.nickname || "Unknown";
+      const lvl = acc.level ?? "N/A";
+      const liked = acc.detailed_info?.liked ?? 0;
+      const lastLogin = acc.lastLogin || "N/A";
+      const status = acc.status || "Unknown";
+      const rg = acc.region || region.toUpperCase();
+
+      // Ngày tạo giữ nguyên JSON
+      const createdAt = acc.detailed_info?.createAt || "N/A";
+
+      const bannerImg = `https://card.sukhdaku.qzz.io/api/profile?uid=${uid}`;
+
+      const embed = new EmbedBuilder()
+        .setColor(0x00c3ff)
+        .setTitle(`🔎 Kết quả Tìm Kiếm ${index}/${results.length}`)
+        .setDescription(
+          `> **Tên người chơi:** ${name}\n` +
+          `> **Khu vực:** :flag_${rg.toLowerCase()}: ${rg}\n` +
+          `> **UID người chơi:** ${uid}\n` +
+          `> **Cấp độ:** ${lvl}\n` +
+          `> **Lượt thích:** ${liked}\n` +
+          `> **Trạng thái:** ${status}\n` +
+          `> **Ngày tạo:** ${createdAt}\n` +
+          `> **Lần đăng nhập cuối:** ${lastLogin}`
+        )
+        .setImage(bannerImg)
+        .setFooter({ text: "Dev: Katari📌" })
+        .setTimestamp();
+
+      await msg.channel.send({ embeds: [embed] });
+    }
+
+  } catch (err) {
+    console.error(err);
+
+    const errMsg = await msg.channel.send(
+      "⚠️ Không thể tìm kiếm người chơi. API lỗi hoặc không phản hồi."
+    );
+
+    setTimeout(() => {
+      errMsg.delete().catch(() => {});
+      loading.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+  }
+}
+// ======= HẾT LỆNH SEARCH =======
+
   // ======= QUẢN LÝ AUTOLIKE HÀNG NGÀY =======
 
   if (["startautolike", "stopautolike", "restartautolike"].includes(command)) {
