@@ -1,3 +1,9 @@
+let randomRunning = false;
+let randomUserId = null;
+let randomUserTag = null;
+let randomStop = false;
+let randomMessage = null;
+
 import { Client, GatewayIntentBits, EmbedBuilder } from "discord.js";
 
 import fetch from "node-fetch";
@@ -1285,7 +1291,7 @@ if (command === "emote") {
         return;
     }
 
-    // === Map tên hành động → emote ID (dùng chung với !emotes) ===
+    // === Map tên hành động → emote ID ===
     const emoteMap = {
         "ak47": "909000063",
         "scar": "909000068",
@@ -1333,7 +1339,6 @@ if (command === "emote") {
         "naruto": "909050002"
     };
 
-    // Nếu nhập tên → chuyển thành ID, không có → dùng trực tiếp như ID
     const emoteId = emoteMap[emoteInput.toLowerCase()] || emoteInput;
 
     // Loading
@@ -1341,9 +1346,10 @@ if (command === "emote") {
         `⏳ **Đang gửi emote ${emoteId} đến UID ${uid}...**`
     );
 
-    // API y hệt bạn đang dùng
+    // 🔥 API MỚI (đã thay)
     const apiUrl =
-        `https://ff-community-apiemoteessss.onrender.com/emote?teamcode=${teamcode}` +
+        `https://katarixemotevipacccount.onrender.com/join` +
+        `?tc=${teamcode}` +
         `&uid1=${uid}` +
         `&emote_id=${emoteId}`;
 
@@ -1381,133 +1387,444 @@ if (command === "emote") {
     }
 }
 
-   // ===================== LỆNH !EMOTES =====================
+    // ===================== LỆNH !RANDOM (AUTO EMOTE) =====================
+if (command === "random") {
+
+    // ================= STOP =================
+    if (args[0] === "stop") {
+        if (!randomRunning) {
+            const m = await msg.reply("⚠️ **Hiện không có auto emote nào đang chạy!**");
+            return setTimeout(() => m.delete().catch(() => {}), 5000);
+        }
+
+        if (msg.author.id !== randomUserId && !msg.member.permissions.has("Administrator")) {
+            const m = await msg.reply(
+                "🚫 **Bạn không có quyền dừng auto emote này!**"
+            );
+            return setTimeout(() => m.delete().catch(() => {}), 5000);
+        }
+
+        randomStop = true;
+        const m = await msg.reply("🛑 **Đã gửi yêu cầu dừng auto emote!**");
+        return setTimeout(() => m.delete().catch(() => {}), 5000);
+    }
+
+    // ================= CHECK ĐANG CHẠY =================
+    if (randomRunning) {
+        const m = await msg.reply(
+            "⏳ **Auto emote đang được sử dụng!**\n⚠️ Vui lòng chờ hoàn tất."
+        );
+        return setTimeout(() => m.delete().catch(() => {}), 5000);
+    }
+
+    const teamcode = args[0];
+    const uid = args[1];
+
+    if (!teamcode || !uid) {
+        const m = await msg.reply(
+            "> ❌ Sai cú pháp!\n> Ví dụ: `!random 1234567 12345678`"
+        );
+        return setTimeout(() => m.delete().catch(() => {}), 5000);
+    }
+
+    // ================= KHÓA =================
+    randomRunning = true;
+    randomUserId = msg.author.id;
+    randomUserTag = msg.author.tag;
+    randomStop = false;
+
+    // ================= MAP EMOTE =================
+    const emoteMap = {
+        ak47: "909000063",
+        scar: "909000068",
+        mp401: "909000075",
+        mp402: "909040010",
+        m10141: "909000081",
+        m10142: "909039011",
+        xm8: "909000085",
+        ump: "909000098",
+        mp5: "909033002",
+        famas: "909000090",
+        m1887: "909035007",
+        thomson: "909038010",
+        an94: "909035012",
+        m4a1: "909033001",
+        g18: "909038012",
+        groza: "909041005",
+        p90: "909049010",
+        m60: "909051003"
+    };
+
+    const emoteEntries = Object.entries(emoteMap);
+    const total = emoteEntries.length;
+
+    // 👉 START (có thể tag ở đây nếu muốn)
+    randomMessage = await msg.reply(
+        `🤖 **Bắt đầu auto emote...**\n` +
+        `> Team code: **${teamcode}**\n` +
+        `> UID: **${uid}**`
+    );
+
+    try {
+        let index = 0;
+
+        for (const [emoteName, emoteId] of emoteEntries) {
+
+            // 🛑 CHECK DỪNG
+            if (randomStop) {
+                await randomMessage.edit(
+                    `🛑 **Auto Emote đã bị dừng!**\n` +
+                    `⏹ Dừng tại: **${emoteName.toUpperCase()}**`
+                );
+                break;
+            }
+
+            index++;
+
+            // ❌ KHÔNG TAG USER Ở ĐÂY
+            await randomMessage.edit(
+                `🤖 **Auto Emote (${index}/${total})**\n` +
+                `🎭 Emote: **${emoteName.toUpperCase()}**\n` +
+                `⏱ Tiếp theo sau **5 giây**`
+            );
+
+            const apiUrl =
+                `https://katarixemotevipacccount.onrender.com/join` +
+                `?tc=${teamcode}&uid1=${uid}&emote_id=${emoteId}`;
+
+            await fetch(apiUrl);
+
+            // ⏱ DELAY 5 GIÂY
+            await new Promise(r => setTimeout(r, 5000));
+        }
+
+        // ================= HOÀN TẤT =================
+        if (!randomStop) {
+            const embed = new EmbedBuilder()
+                .setColor(0x00ff9c)
+                .setTitle("🤖 Auto Emote Hoàn Tất!")
+                .setDescription(
+                    `> Team code: **${teamcode}**\n` +
+                    `> UID: **${uid}**\n\n` +
+                    `✅ **Hoàn tất toàn bộ emote**`
+                )
+                .setFooter({ text: "Dev Katari📌" })
+                .setTimestamp();
+
+            await randomMessage.edit({
+                content: "🎉 **Hoàn tất auto emote!**",
+                embeds: [embed]
+            });
+        }
+
+    } catch (err) {
+        console.error(err);
+        const m = await msg.reply("❌ **Lỗi API – Auto emote bị hủy!**");
+        setTimeout(() => {
+            m.delete().catch(() => {});
+            randomMessage?.delete().catch(() => {});
+        }, 5000);
+    }
+
+    // ================= NHẢ KHÓA =================
+    randomRunning = false;
+    randomUserId = null;
+    randomUserTag = null;
+    randomStop = false;
+    randomMessage = null;
+}
+
+   // ===================== LỆNH !EMOTES (MULTI UID) =====================
 if (command === "emotes") {
+
     const teamcode = args[0];
     const uid1 = args[1];
     const uid2 = args[2];
     const uid3 = args[3];
     const uid4 = args[4];
-    let emoteInput = args[5]; // có thể là tên hoặc ID
+    const uid5 = args[5];
+    const uid6 = args[6];
+    const emoteInput = args[7]; // tên hoặc ID
 
-    // ❌ Sai cú pháp  
-    if (!teamcode || !uid1 || !emoteInput) {  
-        const errMsg = await msg.reply(  
-            "> ❌ Sai cú pháp!\n" +  
-            "> Ví dụ: `!emotes 1234567 12345678 23456789 34567890 45678901 m60`"  
-        );  
-        setTimeout(() => { errMsg.delete().catch(() => {}); msg.delete().catch(() => {}); }, 6000);  
-        return;  
-    }  
+    // ❌ Sai cú pháp
+    if (!teamcode || !uid1 || !emoteInput) {
+        const m = await msg.reply(
+            "> ❌ Sai cú pháp!\n" +
+            "> Ví dụ:\n" +
+            "> `!emotes 1234567 111 m60`\n" +
+            "> `!emotes 1234567 111 222 333 444 555 naruto`"
+        );
+        return setTimeout(() => m.delete().catch(() => {}), 6000);
+    }
 
-    // Map tên hành động → emote ID
+    // ================= MAP HÀNH ĐỘNG (GIỮ NGUYÊN) =================
     const emoteMap = {
-        "ak47": "909000063",
-        "scar": "909000068",
-        "mp401": "909000075",
-        "mp402": "909040010",
-        "m10141": "909000081",
-        "m10142": "909039011",
-        "xm8": "909000085",
-        "ump": "909000098",
-        "mp5": "909033002",
-        "famas": "909000090",
-        "m1887": "909035007",
-        "thomson": "909038010",
-        "an94": "909035012",
-        "m4a1": "909033001",
-        "g18": "909038012",
-        "namdam": "909037011",
-        "groza": "909041005",
-        "chimgokien": "909042008",
-        "paralfell": "909045001",
-        "p90": "909049010",
-        "m60": "909051003",
-        "ngaivang": "909000014",
-        "camco": "909000034",
-        "camco2": "909000128",
-        "tanghoa": "909000010",
-        "thatim": "909000045",
-        "muaxe": "909000074",
-        "muaxe2": "909000088",
-        "lv100": "909042007",
-        "tim": "909043010",
-        "tim2": "909043013",
-        "tim3": "909047003",
-        "bapbenh": "909045012",
-        "anmung": "909046004",
-        "laugiay": "909046005",
-        "narutodoi": "909050003",
-        "lienket": "909049008",
-        "cuu": "909050013",
-        "choicungnhau": "909051017",
-        "giangsinh1": "909051002",
-        "giangsinh2": "909051018",
-        "giangsinh3": "909051019",
-        "giangsinh4": "909051020",
-        "naruto": "909050002"
-        // bạn có thể thêm tiếp ở đây
+        ak47: "909000063",
+        scar: "909000068",
+        mp401: "909000075",
+        mp402: "909040010",
+        m10141: "909000081",
+        m10142: "909039011",
+        xm8: "909000085",
+        ump: "909000098",
+        mp5: "909033002",
+        famas: "909000090",
+        m1887: "909035007",
+        thomson: "909038010",
+        an94: "909035012",
+        m4a1: "909033001",
+        g18: "909038012",
+        namdam: "909037011",
+        groza: "909041005",
+        chimgokien: "909042008",
+        paralfell: "909045001",
+        p90: "909049010",
+        m60: "909051003",
+        ngaivang: "909000014",
+        camco: "909000034",
+        camco2: "909000128",
+        tanghoa: "909000010",
+        thatim: "909000045",
+        muaxe: "909000074",
+        muaxe2: "909000088",
+        lv100: "909042007",
+        tim: "909043010",
+        tim2: "909043013",
+        tim3: "909047003",
+        bapbenh: "909045012",
+        anmung: "909046004",
+        laugiay: "909046005",
+        narutodoi: "909050003",
+        lienket: "909049008",
+        cuu: "909050013",
+        choicungnhau: "909051017",
+        giangsinh1: "909051002",
+        giangsinh2: "909051018",
+        giangsinh3: "909051019",
+        giangsinh4: "909051020",
+        naruto: "909050002"
     };
 
-    // Nếu người dùng nhập tên, chuyển sang ID
+    // tên → ID
     const emoteId = emoteMap[emoteInput.toLowerCase()] || emoteInput;
 
-    // Tin nhắn loading  
-    const loadingMsg = await msg.reply(  
-        `⏳ **Đang gửi emote ${emoteId} đến team ${teamcode}...**`  
-    );  
+    // ================= API MỚI (JOIN – MAX 6 UID) =================
+    const apiUrl =
+        `https://katarixemotevipacccount.onrender.com/join` +
+        `?tc=${teamcode}` +
+        `&uid1=${uid1}` +
+        `${uid2 ? `&uid2=${uid2}` : ""}` +
+        `${uid3 ? `&uid3=${uid3}` : ""}` +
+        `${uid4 ? `&uid4=${uid4}` : ""}` +
+        `${uid5 ? `&uid5=${uid5}` : ""}` +
+        `${uid6 ? `&uid6=${uid6}` : ""}` +
+        `&emote_id=${emoteId}`;
 
-    // Tạo URL API  
-    const apiUrl =  
-        `https://ff-community-apiemoteessss.onrender.com/emote?teamcode=${teamcode}` +  
-        `&uid1=${uid1}` +  
-        `${uid2 ? `&uid2=${uid2}` : ""}` +  
-        `${uid3 ? `&uid3=${uid3}` : ""}` +  
-        `${uid4 ? `&uid4=${uid4}` : ""}` +  
-        `&emote_id=${emoteId}`;  
+    // ================= LOADING =================
+    const loadingMsg = await msg.reply(
+        `⏳ **Đang gửi emote cho nhiều người...**\n` +
+        `🎭 Emote: **${emoteId}**`
+    );
 
-    try {  
-        const res = await fetch(apiUrl);  
-        if (!res.ok) throw new Error("API lỗi");  
+    try {
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error("API lỗi");
 
-        const data = await res.json();  
+        const data = await res.json();
 
-        // Chuẩn bị danh sách UID  
-        const listUID =  
-            `• ${uid1}\n` +  
-            `${uid2 ? `• ${uid2}\n` : ""}` +  
-            `${uid3 ? `• ${uid3}\n` : ""}` +  
-            `${uid4 ? `• ${uid4}\n` : ""}`;  
+        const uidList =
+            `• ${uid1}\n` +
+            `${uid2 ? `• ${uid2}\n` : ""}` +
+            `${uid3 ? `• ${uid3}\n` : ""}` +
+            `${uid4 ? `• ${uid4}\n` : ""}` +
+            `${uid5 ? `• ${uid5}\n` : ""}` +
+            `${uid6 ? `• ${uid6}\n` : ""}`;
 
-        // Embed thành công  
-        const embed = new EmbedBuilder()  
-            .setColor(0x00c3ff)  
-            .setTitle("🎭 Gửi Emote Thành Công!")  
-            .setDescription(  
-                `> Người dùng: <@${msg.author.id}>\n` +  
-                `> Team code: **${teamcode}**\n` +  
-                `> Emote ID: **${emoteId}**\n\n` +  
-                `👥 **Danh sách UID:**\n${listUID}\n` +  
-                `✨ ${data.message || "Emote đã gửi thành công!"}`  
-            )  
-            .setFooter({ text: "Dev Katari📌" })  
-            .setTimestamp();  
+        // ================= EMBED KẾT QUẢ =================
+        const embed = new EmbedBuilder()
+            .setColor(0x00c3ff)
+            .setTitle("🎭 Gửi Emote Thành Công!")
+            .setDescription(
+                `> Người dùng: <@${msg.author.id}>\n` +
+                `> Team code: **${teamcode}**\n` +
+                `> Emote ID: **${emoteId}**\n\n` +
+                `👥 **Danh sách UID:**\n${uidList}\n` +
+                `✨ ${data.message || "Emote đã được gửi"}`
+            )
+            .setFooter({ text: "Dev Katari📌" })
+            .setTimestamp();
 
-        await loadingMsg.edit({  
-            content: "✅ **Kết quả:**",  
-            embeds: [embed]  
-        });  
+        await loadingMsg.edit({
+            content: "✅ **Kết quả:**",
+            embeds: [embed]
+        });
 
-    } catch (err) {  
-        console.log(err);  
+    } catch (err) {
+        console.error(err);
+        const m = await msg.reply("❌ **Không thể gửi emote – API lỗi**");
+        setTimeout(() => {
+            m.delete().catch(() => {});
+            loadingMsg.delete().catch(() => {});
+        }, 5000);
+    }
+}
 
-        const errMsg = await msg.reply(  
-            "❌ **Không thể gửi emote. API gặp lỗi hoặc không phản hồi.**"  
-        );  
+    // ===================== LỆNH !RANDOMS (AUTO EMOTE MULTI UID) =====================
+if (command === "randoms") {
 
-        setTimeout(() => errMsg.delete().catch(() => {}), 5000);  
-        loadingMsg.delete().catch(() => {});  
-    }  
+    // ================= STOP =================
+    if (args[0] === "stop") {
+        if (!randomsRunning) {
+            const m = await msg.reply("⚠️ **Hiện không có auto emote nào đang chạy!**");
+            return setTimeout(() => m.delete().catch(() => {}), 5000);
+        }
+
+        if (msg.author.id !== randomsUserId && !msg.member.permissions.has("Administrator")) {
+            const m = await msg.reply("🚫 **Bạn không có quyền dừng auto emote này!**");
+            return setTimeout(() => m.delete().catch(() => {}), 5000);
+        }
+
+        randomsStop = true;
+        const m = await msg.reply("🛑 **Đã gửi yêu cầu dừng auto emote!**");
+        return setTimeout(() => m.delete().catch(() => {}), 5000);
+    }
+
+    // ================= CHECK ĐANG CHẠY =================
+    if (randomsRunning) {
+        const m = await msg.reply(
+            "⏳ **Auto emote đang được sử dụng!**\n⚠️ Vui lòng chờ hoàn tất."
+        );
+        return setTimeout(() => m.delete().catch(() => {}), 5000);
+    }
+
+    const teamcode = args[0];
+    const uid1 = args[1];
+    const uid2 = args[2];
+    const uid3 = args[3];
+    const uid4 = args[4];
+    const uid5 = args[5];
+    const uid6 = args[6];
+
+    if (!teamcode || !uid1) {
+        const m = await msg.reply(
+            "> ❌ Sai cú pháp!\n" +
+            "> Ví dụ:\n" +
+            "> `!randoms 1234567 111`\n" +
+            "> `!randoms 1234567 111 222 333 444 555 666`"
+        );
+        return setTimeout(() => m.delete().catch(() => {}), 6000);
+    }
+
+    // ================= KHÓA =================
+    randomsRunning = true;
+    randomsUserId = msg.author.id;
+    randomsStop = false;
+
+    // ================= MAP EMOTE =================
+    const emoteMap = {
+        ak47: "909000063",
+        scar: "909000068",
+        mp401: "909000075",
+        mp402: "909040010",
+        m10141: "909000081",
+        m10142: "909039011",
+        xm8: "909000085",
+        ump: "909000098",
+        mp5: "909033002",
+        famas: "909000090",
+        m1887: "909035007",
+        thomson: "909038010",
+        an94: "909035012",
+        m4a1: "909033001",
+        g18: "909038012",
+        groza: "909041005",
+        p90: "909049010",
+        m60: "909051003"
+    };
+
+    const emoteEntries = Object.entries(emoteMap);
+    const total = emoteEntries.length;
+
+    // ================= START =================
+    randomsMessage = await msg.reply(
+        `🤖 **Bắt đầu auto emote (MULTI UID)...**\n` +
+        `> Team code: **${teamcode}**\n` +
+        `> UID: ${[uid1, uid2, uid3, uid4, uid5, uid6].filter(Boolean).join(", ")}`
+    );
+
+    try {
+        let index = 0;
+
+        for (const [emoteName, emoteId] of emoteEntries) {
+
+            // 🛑 CHECK DỪNG
+            if (randomsStop) {
+                await randomsMessage.edit(
+                    `🛑 **Auto Emote đã bị dừng!**\n` +
+                    `⏹ Dừng tại: **${emoteName.toUpperCase()}**`
+                );
+                break;
+            }
+
+            index++;
+
+            await randomsMessage.edit(
+                `🤖 **Auto Emote (${index}/${total})**\n` +
+                `🎭 Emote: **${emoteName.toUpperCase()}**\n` +
+                `⏱ Tiếp theo sau **5 giây**`
+            );
+
+            // ================= API =================
+            const apiUrl =
+                `https://katarixemotevipacccount.onrender.com/join` +
+                `?tc=${teamcode}` +
+                `&uid1=${uid1}` +
+                `${uid2 ? `&uid2=${uid2}` : ""}` +
+                `${uid3 ? `&uid3=${uid3}` : ""}` +
+                `${uid4 ? `&uid4=${uid4}` : ""}` +
+                `${uid5 ? `&uid5=${uid5}` : ""}` +
+                `${uid6 ? `&uid6=${uid6}` : ""}` +
+                `&emote_id=${emoteId}`;
+
+            await fetch(apiUrl);
+
+            // ⏱ DELAY 5 GIÂY
+            await new Promise(r => setTimeout(r, 5000));
+        }
+
+        // ================= HOÀN TẤT =================
+        if (!randomsStop) {
+            const embed = new EmbedBuilder()
+                .setColor(0x00ff9c)
+                .setTitle("🤖 Auto Emote Hoàn Tất!")
+                .setDescription(
+                    `> Team code: **${teamcode}**\n` +
+                    `> UID: ${[uid1, uid2, uid3, uid4, uid5, uid6].filter(Boolean).join(", ")}\n\n` +
+                    `✅ **Hoàn tất toàn bộ emote**`
+                )
+                .setFooter({ text: "Dev Katari📌" })
+                .setTimestamp();
+
+            await randomsMessage.edit({
+                content: "🎉 **Hoàn tất auto emote!**",
+                embeds: [embed]
+            });
+        }
+
+    } catch (err) {
+        console.error(err);
+        const m = await msg.reply("❌ **Lỗi API – Auto emote bị hủy!**");
+        setTimeout(() => {
+            m.delete().catch(() => {});
+            randomsMessage?.delete().catch(() => {});
+        }, 5000);
+    }
+
+    // ================= NHẢ KHÓA =================
+    randomsRunning = false;
+    randomsUserId = null;
+    randomsStop = false;
+    randomsMessage = null;
 }
 
    // ======= LỆNH ADDFRIEND =======
