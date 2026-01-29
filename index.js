@@ -512,89 +512,67 @@ if (command === "katari") {
   // ======= LỆNH LIKE =======
 if (command === "like") {
   const uid = args[0];
+  const region = (args[1] || "vn").toLowerCase();
 
   if (!uid || isNaN(uid)) {
     const warn = await msg.reply(
-      "❌ Sai cú pháp!\n\nVí dụ:\n```bash\n!like 12345678\n```"
+      "❌ Sai cú pháp!\n\nVí dụ:\n```bash\n!like 12345678\n!like 12345678 vn\n```"
     );
 
     setTimeout(() => {
-      msg.delete().catch(() => {});
       warn.delete().catch(() => {});
+      msg.delete().catch(() => {});
     }, 3000);
     return;
   }
 
-  const processing = await msg.reply({
-    content: `Đang buff like cho UID **${uid}**...`,
-  });
+  const processing = await msg.reply(
+    `⏳ Đang buff like cho UID **${uid}** | Region **${region.toUpperCase()}**...`
+  );
 
   try {
-    const res = await fetch(
-      `https://sikibidifreeeapilike.onrender.com/like?server_name=vn&uid=${uid}`
-    );
-    const data = await res.json();
-
-    let embed;
+    const apiUrl = `http://like.thug4ff.com/like?uid=${uid}&region=${region}&key=thug4ff`;
+    const res = await fetch(apiUrl);
+    const data = await res.json(); // ❗ KHÔNG check res.ok
 
     // ===== THÀNH CÔNG =====
     if (data.status === 1) {
-      embed = new EmbedBuilder()
-        .setTitle("BUFF LIKE THÀNH CÔNG")
-        .setDescription(
-          `> **Tên người chơi:** ${data.PlayerNickname || "Không rõ"}\n` +
-          `> **UID:** ${data.UID || uid}\n` +
-          `> **Like trước:** ${data.LikesbeforeCommand}\n` +
-          `> **Like thêm:** +${data.LikesGivenByAPI}\n` +
-          `> **Like sau:** ${data.LikesafterCommand}`
-        )
+      const embed = new EmbedBuilder()
+        .setTitle("✅ BUFF LIKE THÀNH CÔNG")
         .setColor("Green")
-        .setThumbnail(
-          msg.author.displayAvatarURL({ dynamic: true, size: 256 })
-        )
-        .setFooter({ text: "DEVELOPED BY KATARI & SIKIBIDI" });
-
-      await processing.edit({ content: null, embeds: [embed] });
-
-    // ===== ĐÃ ĐẠT GIỚI HẠN =====
-    } else if (data.status === 2) {
-      embed = new EmbedBuilder()
-        .setTitle("ĐÃ ĐẠT GIỚI HẠN LIKE")
         .setDescription(
-          `> **Player UID:** ${uid}\n` +
-          `> UID này đã đạt giới hạn like trong ngày.\n` +
-          `> Vui lòng quay lại vào ngày mai.`
+          `> **Tên người chơi:** ${data.player?.nickname || "Không rõ"}\n` +
+          `> **UID:** ${data.player?.uid || uid}\n` +
+          `> **Khu vực:** ${data.player?.region || region.toUpperCase()}\n` +
+          `> **Like trước:** ${data.likes?.before}\n` +
+          `> **Like thêm:** +${data.likes?.added_by_api}\n` +
+          `> **Like sau:** ${data.likes?.after}`
         )
-        .setColor("Orange")
         .setThumbnail(
           msg.author.displayAvatarURL({ dynamic: true, size: 256 })
         )
-        .setFooter({ text: "DEVELOPED BY KATARI & SIKIBIDI" });
+        .setFooter({ text: "DEVELOPED BY KATARI" })
+        .setTimestamp();
 
       await processing.edit({ content: null, embeds: [embed] });
 
-    // ===== LỖI KHÁC =====
+    // ===== HẾT LIKE / RATE LIMIT =====
     } else {
-      const errMsg = await processing.edit({
-        content: "Không thể buff like cho UID này.",
-      });
+      const errMsg = await processing.edit(
+        "⚠️ Không thể buff like.\n> Có thể đã đạt giới hạn hoặc API đang rate-limit."
+      );
 
-      setTimeout(() => {
-        errMsg.delete().catch(() => {});
-      }, 3000);
+      setTimeout(() => errMsg.delete().catch(() => {}), 4000);
     }
+
   } catch (err) {
     console.error(err);
 
-    const errMsg = await processing.edit({
-      content: "Lỗi kết nối API Like.",
-    });
-
-    setTimeout(() => {
-      errMsg.delete().catch(() => {});
-    }, 3000);
+    const errMsg = await processing.edit("❌ Lỗi xử lý API Like.");
+    setTimeout(() => errMsg.delete().catch(() => {}), 3000);
   }
 }
+// ======= HẾT LỆNH LIKE =======
 
   // ======= LỆNH INFO =======
 if (command === "info") {
