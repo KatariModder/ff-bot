@@ -512,11 +512,10 @@ if (command === "katari") {
   // ======= LỆNH LIKE =======
 if (command === "like") {
   const uid = args[0];
-  const region = (args[1] || "vn").toLowerCase();
 
   if (!uid || isNaN(uid)) {
     const warn = await msg.reply(
-      "❌ Sai cú pháp!\n\nVí dụ:\n```bash\n!like 12345678\n!like 12345678 vn\n```"
+      "❌ Sai cú pháp!\n\nVí dụ:\n```bash\n!like 12345678\n```"
     );
 
     setTimeout(() => {
@@ -527,26 +526,27 @@ if (command === "like") {
   }
 
   const processing = await msg.reply(
-    `⏳ Đang buff like cho UID **${uid}** | Region **${region.toUpperCase()}**...`
+    `⏳ Đang buff like cho UID **${uid}**...`
   );
 
   try {
-    const apiUrl = `http://like.thug4ff.com/like?uid=${uid}&region=${region}&key=thug4ff`;
+    const apiUrl = `https://ffcommunityapilvupaya.spcfy.eu/likes?uid=${uid}`;
     const res = await fetch(apiUrl);
-    const data = await res.json(); // ❗ KHÔNG check res.ok
+    const data = await res.json();
+
+    const result = data?.result;
 
     // ===== THÀNH CÔNG =====
-    if (data.status === 1) {
+    if (result?.API?.Success === true) {
       const embed = new EmbedBuilder()
         .setTitle("✅ BUFF LIKE THÀNH CÔNG")
         .setColor("Green")
         .setDescription(
-          `> **Tên người chơi:** ${data.player?.nickname || "Không rõ"}\n` +
-          `> **UID:** ${data.player?.uid || uid}\n` +
-          `> **Khu vực:** ${data.player?.region || region.toUpperCase()}\n` +
-          `> **Like trước:** ${data.likes?.before}\n` +
-          `> **Like thêm:** +${data.likes?.added_by_api}\n` +
-          `> **Like sau:** ${data.likes?.after}`
+          `> **Tên người chơi:** ${result["User Info"]?.["Account Name"] || "Không rõ"}\n` +
+          `> **UID:** ${result["User Info"]?.["Account UID"] || uid}\n` +
+          `> **Like trước:** ${result["Likes Info"]?.["Likes Before"]}\n` +
+          `> **Like thêm:** +${result["Likes Info"]?.["Likes Added"]}\n` +
+          `> **Like sau:** ${result["Likes Info"]?.["Likes After"]}`
         )
         .setThumbnail(
           msg.author.displayAvatarURL({ dynamic: true, size: 256 })
@@ -556,20 +556,27 @@ if (command === "like") {
 
       await processing.edit({ content: null, embeds: [embed] });
 
-    // ===== HẾT LIKE / RATE LIMIT =====
+    // ===== MAX LIKE / RATE LIMIT =====
     } else {
       const errMsg = await processing.edit(
-        "⚠️ Không thể buff like.\n> Có thể đã đạt giới hạn hoặc API đang rate-limit."
+        "⚠️ UID này đã **MAX LIKE**.\n> Vui lòng quay lại **ngày mai** để buff tiếp."
       );
 
-      setTimeout(() => errMsg.delete().catch(() => {}), 4000);
+      setTimeout(() => {
+        errMsg.delete().catch(() => {});
+      }, 10000);
     }
 
   } catch (err) {
     console.error(err);
 
-    const errMsg = await processing.edit("❌ Lỗi xử lý API Like.");
-    setTimeout(() => errMsg.delete().catch(() => {}), 3000);
+    const errMsg = await processing.edit(
+      "❌ Lỗi kết nối API Like."
+    );
+
+    setTimeout(() => {
+      errMsg.delete().catch(() => {});
+    }, 10000);
   }
 }
 // ======= HẾT LỆNH LIKE =======
