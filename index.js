@@ -3,6 +3,10 @@ let randomUserId = null;
 let randomUserTag = null;
 let randomStop = false;
 let randomMessage = null;
+let randomsRunning = false;
+let randomsUserId = null;
+let randomsStop = false;
+let randomsMessage = null;
 
 import { Client, GatewayIntentBits, EmbedBuilder } from "discord.js";
 
@@ -1130,13 +1134,20 @@ if (command === "ghost") {
 }
 // ===================== HẾT LỆNH !GHOST =====================
 
-   // ===================== LỆNH !TEAM5 & !TEAM6 =====================
-if (command === "team5" || command === "team6") { // bỏ dấu "!" nếu đã parse
+   // ===================== LỆNH !TEAM3 / !TEAM4 / !TEAM5 / !TEAM6 =====================
+if (command.startsWith("team")) {
+
+    const teamNumber = command.replace("team", ""); // lấy số sau chữ team
     const uid = args[0];
 
+    // ❌ team không hợp lệ
+    if (!["3", "4", "5", "6"].includes(teamNumber)) return;
+
     // ❌ Sai cú pháp
-    if (!uid) { // không kiểm tra isNaN nữa, chấp nhận UID dài
-        const errMsg = await msg.reply("> ❌ Sai cú pháp!\n> Ví dụ: `!team5 12345678`");
+    if (!uid) {
+        const errMsg = await msg.reply(
+            `> ❌ Sai cú pháp!\n> Ví dụ: \`!team${teamNumber} 12345678\``
+        );
 
         setTimeout(() => {
             errMsg.delete().catch(() => {});
@@ -1146,27 +1157,24 @@ if (command === "team5" || command === "team6") { // bỏ dấu "!" nếu đã p
         return;
     }
 
-    // Tin nhắn loading
+    // ⏳ Loading
     const loadingMsg = await msg.reply(
-        `⏳ **Đang tạo team ${command === "team5" ? "5" : "6"}...**\n` +
+        `⏳ **Đang tạo team ${teamNumber}...**\n` +
         `> Chuẩn bị mời **UID: ${uid}**`
     );
 
-    // ✅ CHỈ THAY API TEAM5 – TEAM6 GIỮ NGUYÊN
-    const apiUrl =
-        command === "team5"
-            ? `https://team-create.onrender.com/5?uid=${uid}`
-            : `https://ff-community-apiemoteessss.onrender.com/6?uid=${uid}&region=VN`;
+    // ✅ API động theo số team
+    const apiUrl = `https://team-create.onrender.com/${teamNumber}?uid=${uid}`;
 
     try {
         const res = await fetch(apiUrl);
         if (!res.ok) throw new Error("API lỗi");
 
-        await res.json(); // chỉ gọi API, không cần hiển thị data
+        await res.json(); // chỉ cần gọi API
 
         const embed = new EmbedBuilder()
-            .setColor(command === "team5" ? 0x00c3ff : 0xff7b00)
-            .setTitle(`🎮 Team ${command === "team5" ? "5" : "6"} đã sẵn sàng`)
+            .setColor(0x00c3ff)
+            .setTitle(`🎮 Team ${teamNumber} đã sẵn sàng`)
             .setDescription(
                 `> Người dùng yêu cầu: <@${msg.author.id}>\n` +
                 `> Sẵn sàng mời **UID: ${uid}**\n\n` +
@@ -1175,14 +1183,13 @@ if (command === "team5" || command === "team6") { // bỏ dấu "!" nếu đã p
             .setFooter({ text: "Dev Katari📌" })
             .setTimestamp();
 
-        // update loading → embed
         await loadingMsg.edit({
             content: "✅ **Hoàn tất! Hãy chấp nhận lời mời:**",
             embeds: [embed]
         });
 
     } catch (err) {
-        console.log(err);
+        console.error(err);
 
         const errMsg = await msg.reply(
             "❌ **Không thể tạo team. API gặp lỗi hoặc không phản hồi.**"
@@ -1190,7 +1197,6 @@ if (command === "team5" || command === "team6") { // bỏ dấu "!" nếu đã p
 
         setTimeout(() => errMsg.delete().catch(() => {}), 5000);
 
-        // Xóa lệnh user + loading nếu lỗi
         msg.delete().catch(() => {});
         loadingMsg.delete().catch(() => {});
     }
@@ -1278,50 +1284,50 @@ if (command === "emote") {
 
     // === Map tên hành động → emote ID ===
     const emoteMap = {
-        "ak47": "909000063",
-        "scar": "909000068",
-        "mp401": "909000075",
-        "mp402": "909040010",
-        "m10141": "909000081",
-        "m10142": "909039011",
-        "xm8": "909000085",
-        "ump": "909000098",
-        "mp5": "909033002",
-        "famas": "909000090",
-        "m1887": "909035007",
-        "thomson": "909038010",
-        "an94": "909035012",
-        "m4a1": "909033001",
-        "g18": "909038012",
-        "namdam": "909037011",
-        "groza": "909041005",
-        "chimgokien": "909042008",
-        "paralfell": "909045001",
-        "p90": "909049010",
-        "m60": "909051003",
-        "ngaivang": "909000014",
-        "camco": "909000034",
-        "camco2": "909000128",
-        "tanghoa": "909000010",
-        "thatim": "909000045",
-        "muaxe": "909000074",
-        "muaxe2": "909000088",
-        "lv100": "909042007",
-        "tim": "909043010",
-        "tim2": "909043013",
-        "tim3": "909047003",
-        "bapbenh": "909045012",
-        "anmung": "909046004",
-        "laugiay": "909046005",
-        "narutodoi": "909050003",
-        "lienket": "909049008",
-        "cuu": "909050013",
-        "choicungnhau": "909051017",
-        "giangsinh1": "909051002",
-        "giangsinh2": "909051018",
-        "giangsinh3": "909051019",
-        "giangsinh4": "909051020",
-        "naruto": "909050002"
+        ak47: "909000063",
+        scar: "909000068",
+        mp401: "909000075",
+        mp402: "909040010",
+        m10141: "909000081",
+        m10142: "909039011",
+        xm8: "909000085",
+        ump: "909000098",
+        mp5: "909033002",
+        famas: "909000090",
+        m1887: "909035007",
+        thomson: "909038010",
+        an94: "909035012",
+        m4a1: "909033001",
+        g18: "909038012",
+        namdam: "909037011",
+        groza: "909041005",
+        chimgokien: "909042008",
+        paralfell: "909045001",
+        p90: "909049010",
+        m60: "909051003",
+        ngaivang: "909000014",
+        camco: "909000034",
+        camco2: "909000128",
+        tanghoa: "909000010",
+        thatim: "909000045",
+        muaxe: "909000074",
+        muaxe2: "909000088",
+        lv100: "909042007",
+        tim: "909043010",
+        tim2: "909043013",
+        tim3: "909047003",
+        bapbenh: "909045012",
+        anmung: "909046004",
+        laugiay: "909046005",
+        narutodoi: "909050003",
+        lienket: "909049008",
+        cuu: "909050013",
+        choicungnhau: "909051017",
+        giangsinh1: "909051002",
+        giangsinh2: "909051018",
+        giangsinh3: "909051019",
+        giangsinh4: "909051020",
+        naruto: "909050002"
     };
 
     const emoteId = emoteMap[emoteInput.toLowerCase()] || emoteInput;
@@ -1331,9 +1337,9 @@ if (command === "emote") {
         `⏳ **Đang gửi emote ${emoteId} đến UID ${uid}...**`
     );
 
-    // 🔥 API MỚI (đã thay)
+    // 🔥 API EMOTE MỚI
     const apiUrl =
-        `https://katarixemotevipacccount.onrender.com/join` +
+        `https://emote-api-xhi9.onrender.com/join` +
         `?tc=${teamcode}` +
         `&uid1=${uid}` +
         `&emote_id=${emoteId}`;
@@ -1352,7 +1358,7 @@ if (command === "emote") {
                 `> Team code: **${teamcode}**\n` +
                 `> UID: **${uid}**\n` +
                 `> Emote ID: **${emoteId}**\n\n` +
-                `✨ ${data.message || "Emote đã gửi thành công!"}`
+                `✨ ${data.message || "Emote triggered"}`
             )
             .setFooter({ text: "Dev Katari📌" })
             .setTimestamp();
@@ -1372,7 +1378,7 @@ if (command === "emote") {
     }
 }
 
-    // ===================== LỆNH !RANDOM (AUTO EMOTE) =====================
+    // ===================== LỆNH !RANDOM (AUTO EMOTE 1 UID) =====================
 if (command === "random") {
 
     // ================= STOP =================
@@ -1382,10 +1388,11 @@ if (command === "random") {
             return setTimeout(() => m.delete().catch(() => {}), 5000);
         }
 
-        if (msg.author.id !== randomUserId && !msg.member.permissions.has("Administrator")) {
-            const m = await msg.reply(
-                "🚫 **Bạn không có quyền dừng auto emote này!**"
-            );
+        if (
+            msg.author.id !== randomUserId &&
+            !msg.member.permissions.has("Administrator")
+        ) {
+            const m = await msg.reply("🚫 **Bạn không có quyền dừng auto này!**");
             return setTimeout(() => m.delete().catch(() => {}), 5000);
         }
 
@@ -1397,7 +1404,7 @@ if (command === "random") {
     // ================= CHECK ĐANG CHẠY =================
     if (randomRunning) {
         const m = await msg.reply(
-            "⏳ **Auto emote đang được sử dụng!**\n⚠️ Vui lòng chờ hoàn tất."
+            `⏳ **Đang có auto khác chạy!**\n👤 Người dùng: <@${randomUserId}>`
         );
         return setTimeout(() => m.delete().catch(() => {}), 5000);
     }
@@ -1412,7 +1419,7 @@ if (command === "random") {
         return setTimeout(() => m.delete().catch(() => {}), 5000);
     }
 
-    // ================= KHÓA =================
+    // ================= KHÓA CHUNG =================
     randomRunning = true;
     randomUserId = msg.author.id;
     randomUserTag = msg.author.tag;
@@ -1443,9 +1450,8 @@ if (command === "random") {
     const emoteEntries = Object.entries(emoteMap);
     const total = emoteEntries.length;
 
-    // 👉 START (có thể tag ở đây nếu muốn)
     randomMessage = await msg.reply(
-        `🤖 **Bắt đầu auto emote...**\n` +
+        `🤖 **Bắt đầu auto emote (1 UID)...**\n` +
         `> Team code: **${teamcode}**\n` +
         `> UID: **${uid}**`
     );
@@ -1455,7 +1461,6 @@ if (command === "random") {
 
         for (const [emoteName, emoteId] of emoteEntries) {
 
-            // 🛑 CHECK DỪNG
             if (randomStop) {
                 await randomMessage.edit(
                     `🛑 **Auto Emote đã bị dừng!**\n` +
@@ -1466,7 +1471,6 @@ if (command === "random") {
 
             index++;
 
-            // ❌ KHÔNG TAG USER Ở ĐÂY
             await randomMessage.edit(
                 `🤖 **Auto Emote (${index}/${total})**\n` +
                 `🎭 Emote: **${emoteName.toUpperCase()}**\n` +
@@ -1474,41 +1478,20 @@ if (command === "random") {
             );
 
             const apiUrl =
-                `https://katarixemotevipacccount.onrender.com/join` +
+                `https://emote-api-xhi9.onrender.com/join` +
                 `?tc=${teamcode}&uid1=${uid}&emote_id=${emoteId}`;
 
             await fetch(apiUrl);
-
-            // ⏱ DELAY 5 GIÂY
             await new Promise(r => setTimeout(r, 5000));
         }
 
-        // ================= HOÀN TẤT =================
         if (!randomStop) {
-            const embed = new EmbedBuilder()
-                .setColor(0x00ff9c)
-                .setTitle("🤖 Auto Emote Hoàn Tất!")
-                .setDescription(
-                    `> Team code: **${teamcode}**\n` +
-                    `> UID: **${uid}**\n\n` +
-                    `✅ **Hoàn tất toàn bộ emote**`
-                )
-                .setFooter({ text: "Dev Katari📌" })
-                .setTimestamp();
-
-            await randomMessage.edit({
-                content: "🎉 **Hoàn tất auto emote!**",
-                embeds: [embed]
-            });
+            await randomMessage.edit("🎉 **Hoàn tất auto emote!**");
         }
 
     } catch (err) {
         console.error(err);
-        const m = await msg.reply("❌ **Lỗi API – Auto emote bị hủy!**");
-        setTimeout(() => {
-            m.delete().catch(() => {});
-            randomMessage?.delete().catch(() => {});
-        }, 5000);
+        await msg.reply("❌ **Lỗi API – Auto emote bị hủy!**");
     }
 
     // ================= NHẢ KHÓA =================
@@ -1521,7 +1504,6 @@ if (command === "random") {
 
    // ===================== LỆNH !EMOTES (MULTI UID) =====================
 if (command === "emotes") {
-
     const teamcode = args[0];
     const uid1 = args[1];
     const uid2 = args[2];
@@ -1537,12 +1519,12 @@ if (command === "emotes") {
             "> ❌ Sai cú pháp!\n" +
             "> Ví dụ:\n" +
             "> `!emotes 1234567 111 m60`\n" +
-            "> `!emotes 1234567 111 222 333 444 555 naruto`"
+            "> `!emotes 1234567 111 222 333 444 naruto`"
         );
         return setTimeout(() => m.delete().catch(() => {}), 6000);
     }
 
-    // ================= MAP HÀNH ĐỘNG (GIỮ NGUYÊN) =================
+    // ================= MAP EMOTE (GIỮ NGUYÊN) =================
     const emoteMap = {
         ak47: "909000063",
         scar: "909000068",
@@ -1590,12 +1572,11 @@ if (command === "emotes") {
         naruto: "909050002"
     };
 
-    // tên → ID
     const emoteId = emoteMap[emoteInput.toLowerCase()] || emoteInput;
 
-    // ================= API MỚI (JOIN – MAX 6 UID) =================
+    // ================= API EMOTE 1 NGƯỜI (JOIN) =================
     const apiUrl =
-        `https://katarixemotevipacccount.onrender.com/join` +
+        `https://emote-api-xhi9.onrender.com/join` +
         `?tc=${teamcode}` +
         `&uid1=${uid1}` +
         `${uid2 ? `&uid2=${uid2}` : ""}` +
@@ -1625,7 +1606,6 @@ if (command === "emotes") {
             `${uid5 ? `• ${uid5}\n` : ""}` +
             `${uid6 ? `• ${uid6}\n` : ""}`;
 
-        // ================= EMBED KẾT QUẢ =================
         const embed = new EmbedBuilder()
             .setColor(0x00c3ff)
             .setTitle("🎭 Gửi Emote Thành Công!")
@@ -1634,7 +1614,7 @@ if (command === "emotes") {
                 `> Team code: **${teamcode}**\n` +
                 `> Emote ID: **${emoteId}**\n\n` +
                 `👥 **Danh sách UID:**\n${uidList}\n` +
-                `✨ ${data.message || "Emote đã được gửi"}`
+                `✨ ${data.message || "Emote triggered"}`
             )
             .setFooter({ text: "Dev Katari📌" })
             .setTimestamp();
@@ -1683,14 +1663,9 @@ if (command === "randoms") {
     }
 
     const teamcode = args[0];
-    const uid1 = args[1];
-    const uid2 = args[2];
-    const uid3 = args[3];
-    const uid4 = args[4];
-    const uid5 = args[5];
-    const uid6 = args[6];
+    const uidList = args.slice(1).filter(Boolean);
 
-    if (!teamcode || !uid1) {
+    if (!teamcode || uidList.length === 0) {
         const m = await msg.reply(
             "> ❌ Sai cú pháp!\n" +
             "> Ví dụ:\n" +
@@ -1734,7 +1709,7 @@ if (command === "randoms") {
     randomsMessage = await msg.reply(
         `🤖 **Bắt đầu auto emote (MULTI UID)...**\n` +
         `> Team code: **${teamcode}**\n` +
-        `> UID: ${[uid1, uid2, uid3, uid4, uid5, uid6].filter(Boolean).join(", ")}`
+        `> UID: ${uidList.join(", ")}`
     );
 
     try {
@@ -1742,7 +1717,6 @@ if (command === "randoms") {
 
         for (const [emoteName, emoteId] of emoteEntries) {
 
-            // 🛑 CHECK DỪNG
             if (randomsStop) {
                 await randomsMessage.edit(
                     `🛑 **Auto Emote đã bị dừng!**\n` +
@@ -1759,32 +1733,24 @@ if (command === "randoms") {
                 `⏱ Tiếp theo sau **5 giây**`
             );
 
-            // ================= API =================
+            // ✅ API MỚI
             const apiUrl =
-                `https://katarixemotevipacccount.onrender.com/join` +
+                `https://emote-api-xhi9.onrender.com/join` +
                 `?tc=${teamcode}` +
-                `&uid1=${uid1}` +
-                `${uid2 ? `&uid2=${uid2}` : ""}` +
-                `${uid3 ? `&uid3=${uid3}` : ""}` +
-                `${uid4 ? `&uid4=${uid4}` : ""}` +
-                `${uid5 ? `&uid5=${uid5}` : ""}` +
-                `${uid6 ? `&uid6=${uid6}` : ""}` +
+                uidList.map((uid, i) => `&uid${i + 1}=${uid}`).join("") +
                 `&emote_id=${emoteId}`;
 
             await fetch(apiUrl);
-
-            // ⏱ DELAY 5 GIÂY
             await new Promise(r => setTimeout(r, 5000));
         }
 
-        // ================= HOÀN TẤT =================
         if (!randomsStop) {
             const embed = new EmbedBuilder()
                 .setColor(0x00ff9c)
                 .setTitle("🤖 Auto Emote Hoàn Tất!")
                 .setDescription(
                     `> Team code: **${teamcode}**\n` +
-                    `> UID: ${[uid1, uid2, uid3, uid4, uid5, uid6].filter(Boolean).join(", ")}\n\n` +
+                    `> UID: ${uidList.join(", ")}\n\n` +
                     `✅ **Hoàn tất toàn bộ emote**`
                 )
                 .setFooter({ text: "Dev Katari📌" })
