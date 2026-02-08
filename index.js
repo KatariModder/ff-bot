@@ -275,9 +275,9 @@ if (command === "katari") {
 > Kiểm tra UID có bị ban hay không.
 > 🧩 Ví dụ: \`!check 12345678\`
 
-**!visit <region> <UID>**
+**!visits <region> <UID>**
 > Tăng lượt xem cho tài khoản thông qua API visit.
-> 🧩 Ví dụ: \`!visit vn 12345678\`
+> 🧩 Ví dụ: \`!visits vn 12345678\`
 
 **!spam <UID>**
 > Gửi lời mời liên tục đến người chơi.
@@ -649,12 +649,12 @@ if (command === "check") {
     const description = isBanned
       ? `> **Lý do:** Tài khoản này đã được xác nhận sử dụng phần mềm gian lận (pmt3)
 > **Thời gian bị cấm:** Vĩnh viễn
-> **Biệt danh:** ${nickname}
+> **Tên:** ${nickname}
 > **UID:** ${uid}
 > **Lần cuối đăng nhập:** ${lastLogin}
 > **Khu vực:** ${region}`
-      : `> **Trạng thái:** Không phát hiện gian lận (pmt3)
-> **Biệt danh:** ${nickname}
+      : `> **Trạng thái:** Không phát hiện gian lận của người chơi này (pmt3)
+> **Tên:** ${nickname}
 > **UID:** ${uid}
 > **Lần cuối đăng nhập:** ${lastLogin}
 > **Khu vực:** ${region}`;
@@ -687,145 +687,70 @@ if (command === "check") {
   }
 }
 
-  // ======= LỆNH VISIT =======
+  // ======= LỆNH VISITS =======
+if (command === "visits") {
+  if (args.length < 2) {
+    return msg.reply(
+      "❌ Sai cú pháp!\n> Ví dụ: `!visits vn 12345678`"
+    );
+  }
 
-if (command === "visit") {
-
-  if (args.length < 2)
-
-    return msg.reply("❌ Dùng đúng cú pháp: `!visit [region] [UID]`");
-
-  const region = args[0];
-
+  const region = args[0].toLowerCase();
   const uid = args[1];
 
-  const apiUrl = `https://visit-api-xnxx.vercel.app/visit?region=${region}&uid=${uid}`;
+  if (isNaN(uid)) {
+    return msg.reply("❌ UID không hợp lệ!");
+  }
 
+  const apiUrl = `https://sulav-ajay-visits.vercel.app/${region}/${uid}`;
   const startTime = Date.now();
 
-  // Gửi message loading (không kèm GIF)
-
-  let loading;
-
-  try {
-
-    loading = await msg.reply(`🌍 Đang tăng lượt xem cho UID **${uid}**...`);
-
-  } catch (err) {
-
-    console.log("Không thể gửi message loading:", err.message);
-
-    loading = null; // tiếp tục xử lý mà không có message loading
-
-  }
+  const loading = await msg.reply(
+    `🌍 Đang tiến hành tăng lượt xem cho UID **${uid}**...`
+  );
 
   try {
-
     const res = await fetch(apiUrl);
-
-    if (!res.ok) throw new Error("API không phản hồi.");
+    if (!res.ok) throw new Error("API không phản hồi");
 
     const data = await res.json();
-
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
 
-    const success = !data.error && data.success > 0;
-
     const embed = new EmbedBuilder()
-
-      .setTitle(success ? "✅ Visit thành công!" : "❌ Visit thất bại")
-
-      .setColor(success ? 0x00ff00 : 0xff0000)
-
-      .setThumbnail(
-
-        success
-
-          ? "https://cdn-icons-png.flaticon.com/512/190/190411.png"
-
-          : "https://cdn-icons-png.flaticon.com/512/463/463612.png"
-
+      .setColor(0x00c3ff)
+      .setTitle("📊 KẾT QUẢ VISITS")
+      .setDescription(
+        `> **Tên:** ${data.nickname || "N/A"}\n` +
+        `> **Khu vực:** ${data.region || region.toUpperCase()}\n` +
+        `> **UID:** ${data.uid || uid}\n` +
+        `> **Cấp độ:** ${data.level ?? "N/A"}\n` +
+        `> **Lượt thích:** ${data.likes ?? 0}\n` +
+        `> **Thành công:** ${data.success ?? 0}\n` +
+        `> **Thất bại:** ${data.fail ?? 0}`
       )
-
+      // Avatar Discord người dùng (góc phải)
+      .setThumbnail(
+        msg.author.displayAvatarURL({ dynamic: true, size: 256 })
+      )
+      .setFooter({ text: `Dev: Katari • ${elapsed}s` })
       .setTimestamp();
 
-    let desc = `
-
-👤 UID: ${data.uid || uid}
-
-👤 Tên nhân vật: ${data.nickname || "N/A"}
-
-🌍 Khu vực: ${data.region || region}
-
-⭐ Cấp độ: ${data.level || "N/A"}
-
-❤️ Lượt thích: ${data.likes || 0}
-
-✅ Thành công: ${data.success || 0}
-
-❌ Thất bại: ${data.fail || 0}
-
-⏱️ Thời gian xử lý: ${elapsed}s
-
-📌 Dev: Katari
-
-`;
-
-    embed.setDescription(desc);
-
-    // Chỉ edit nếu message loading còn tồn tại
-
-    if (loading) {
-
-      try {
-
-        await loading.edit({ content: null, embeds: [embed] });
-
-      } catch (err) {
-
-        console.log("Không thể edit message:", err.message);
-
-        await msg.reply({ embeds: [embed] }); // fallback gửi mới
-
-      }
-
-    } else {
-
-      await msg.reply({ embeds: [embed] }); // fallback gửi mới
-
-    }
+    await loading.edit({ content: null, embeds: [embed] });
 
   } catch (err) {
+    console.error(err);
 
-    const errEmbed = new EmbedBuilder()
+    const errMsg = await loading.edit(
+      "❌ Không thể tăng visit.\n> API lỗi hoặc không phản hồi."
+    );
 
-      .setTitle("🚫 Lỗi khi gọi API Visit")
-
-      .setDescription(`Chi tiết: \`${err.message}\``)
-
-      .setColor(0xff0000);
-
-    if (loading) {
-
-      try {
-
-        await loading.edit({ content: null, embeds: [errEmbed] });
-
-      } catch {
-
-        await msg.reply({ embeds: [errEmbed] });
-
-      }
-
-    } else {
-
-      await msg.reply({ embeds: [errEmbed] });
-
-    }
-
+    setTimeout(() => {
+      errMsg.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
   }
-
 }
+// ======= HẾT LỆNH VISITS =======
 
       // ======= LỆNH BIO MỚI (CHỈ TOKEN HOẶC JWT) =======
 if (command === "bio") {
