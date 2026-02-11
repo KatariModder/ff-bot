@@ -2145,14 +2145,6 @@ client.login(process.env.TOKEN)
   .then(() => console.log("Login thành công"))
   .catch(err => console.error("Login lỗi:", err));
 
- 
-
-// ==================== KHỞI ĐỘNG AUTOLIKE NGAY KHI BOT CHẠY ====================
-
-client.on("ready", () => {
-  startAutoLike();
-});
-
 // ====== EXPRESS KEEP-ALIVE ======
 const app = express();
 const PORT = process.env.PORT || 3000;
