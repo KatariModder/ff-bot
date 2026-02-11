@@ -2149,7 +2149,9 @@ client.login(process.env.TOKEN)
 
 // ==================== KHỞI ĐỘNG AUTOLIKE NGAY KHI BOT CHẠY ====================
 
-startAutoLike();
+client.on("ready", () => {
+  startAutoLike();
+});
 
 // ====== EXPRESS KEEP-ALIVE ======
 const app = express();
