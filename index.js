@@ -2141,7 +2141,9 @@ function getRankColor(rank) {
 
 // ==================== LOGIN BOT ====================
 
-client.login(TOKEN);
+client.login(process.env.TOKEN)
+  .then(() => console.log("Login thành công"))
+  .catch(err => console.error("Login lỗi:", err));
 
  
 
