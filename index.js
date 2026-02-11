@@ -2141,9 +2141,13 @@ function getRankColor(rank) {
 
 // ==================== LOGIN BOT ====================
 
+console.log("TOKEN length:", process.env.TOKEN?.length);
+
 client.login(process.env.TOKEN)
-  .then(() => console.log("Login thành công"))
-  .catch(err => console.error("Login lỗi:", err));
+  .then(() => console.log("✅ Login thành công"))
+  .catch(err => console.error("❌ Login lỗi:", err));
+
+
 
 // ====== EXPRESS KEEP-ALIVE ======
 const app = express();
