@@ -665,38 +665,34 @@ if (command === "check") {
       description =
 `> **Lí do:** Tài khoản người chơi này đã bị ban vĩnh viễn do sử dụng phần mềm gian lận (pmt3).
 > **Tên:** ${nickname}
-> **UID:** ${uid}
+> **UID:** \`${uid}\`
 > **Khu vực:** ${region}
 > **Cấp độ:** ${level}
-> **EXP:** ${exp}
-> **Thời gian bắt đầu ban:** ${formatTimestamp(banInfo.start_ban)}
-> **Lần đăng nhập cuối:** ${formatTimestamp(lastLogin)}`;
-
+> **Thời gian bắt đầu ban:** ${formatTimestamp(banInfo.start_ban)}`;
     }
 
     // ⚠️ BAN TẠM THỜI
     else if (banStatus === 2) {
 
-      title = "⚠️ Người chơi bị BAN TẠM THỜI";
-      color = "Orange";
+  title = "⚠️ Người chơi bị BAN TẠM THỜI";
+  color = "Orange";
 
-      // dùng GIF giống ban
-      image = "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253290639370/standard-1.gif";
+  image = "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253290639370/standard-1.gif";
 
-      const remainingHours = Math.floor(banInfo.remaining_seconds / 3600);
+  const banStart = banInfo.start_ban;
+  const banEnd = banStart + banInfo.remaining_seconds;
 
-      description =
-`> **Trạng thái:** Tài khoản đang bị ban tạm thời, không nên log vào khi bị ban id (tạm thời) tránh ban cứ tiếp diễn.
+  description = `
+> **Trạng thái:** Tài khoản đang bị ban tạm thời, không nên log vào khi bị ban id (tạm thời) tránh ban cứ tiếp diễn.
 > **Tên:** ${nickname}
-> **UID:** ${uid}
+> **UID:** \`${uid}\`
 > **Khu vực:** ${region}
 > **Cấp độ:** ${level}
-> **EXP:** ${exp}
-> **Bắt đầu ban:** ${formatTimestamp(banInfo.start_ban)}
-> **Lần đăng nhập cuối:** ${formatTimestamp(lastLogin)}`;
-> **Thời gian còn lại:** ${remainingHours} giờ
+> **Bắt đầu ban:** <t:${banStart}:f>
+> **Thời gian ban tạm thời kết thúc sau:** <t:${banEnd}:f>
+`;
 
-    }
+}
 
     // ✅ KHÔNG BAN
     else {
@@ -709,10 +705,9 @@ if (command === "check") {
       description =
 `> **Trạng thái:** Không phát hiện người chơi dùng phần mềm gian lận (pmt3).
 > **Tên:** ${nickname}
-> **UID:** ${uid}
+> **UID:** \`${uid}\`
 > **Khu vực:** ${region}
 > **Cấp độ:** ${level}
-> **EXP:** ${exp}
 > **Lần đăng nhập cuối:** ${formatTimestamp(lastLogin)}`;
 
     }
@@ -2081,7 +2076,7 @@ async function getFullInfoEmbed(uid, user) {
 
   const color = getRankColor(acc?.rank);
 
-  const bannerImg = `https://em-profile-card.vercel.app/profile?uid=${uid}&t=${Date.now()}`;
+  const bannerImg = `https://em-profile-card.vercel.app/profile?uid=${uid}`;
 
   const embed = new EmbedBuilder()
     .setColor(color)
@@ -2103,7 +2098,7 @@ async function getFullInfoEmbed(uid, user) {
       `**├─ Cấp độ**: ${acc?.level ?? "not found"} (Exp: ${acc?.exp ?? "not found"})\n` +
       `**├─ Khu vực**: ${acc?.region ?? "not found"}\n` +
       `**├─ Lượt thích**: ${acc?.liked ?? "not found"}\n` +
-      `**├─ Cấp Prime**: ${prime}\n` +
+      `**├─ Cấp prime**: ${prime}\n` +
       `**├─ Điểm uy tín**: ${credit?.creditScore ?? "not found"}\n` +
       `**└─ Chữ ký**: ${social?.signature || "not found"}`
   });
