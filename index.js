@@ -1059,7 +1059,7 @@ if (command === "spam") {
         const data = await res.json();
 
         const embed = new EmbedBuilder()
-            .setColor("#Green")
+            .setColor("#00FF00")
             .setTitle("📨 Spam Thành Công")
             .setDescription(
 `> **UID:** \`${uid}\`
@@ -1131,7 +1131,7 @@ if (command === "ghost") {
     const teamcode = data.Teamcode || code;
 
     const embed = new EmbedBuilder()
-      .setColor("#Green")
+      .setColor("#00FF00")
       .setTitle("👻 Ghost TeamCode thành công")
       .setDescription(
 `> **Người yêu cầu:** <@${msg.author.id}>
