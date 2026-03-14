@@ -326,7 +326,7 @@ if (command === "katari") {
         {
           name: "ℹ️ THÔNG TIN KHÁC",
           value: `
-📦 Phiên bản bot: **v4.0.0**
+📦 Phiên bản bot: **v4**
 
 💬 Gõ \`!katari help\` bất kỳ lúc nào để xem lại danh sách lệnh.
 `,
@@ -809,7 +809,7 @@ if (command === "visits") {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
 
     const embed = new EmbedBuilder()
-      .setColor(0x00c3ff)
+      .setColor(Green)
       .setTitle("👁️ KẾT QUẢ VISITS")
       .setDescription(
 `> **Tên:** ${nickname}
@@ -822,7 +822,7 @@ if (command === "visits") {
       .setThumbnail(
         msg.author.displayAvatarURL({ dynamic: true, size: 256 })
       )
-      .setFooter({ text: `Dev: Katari • ${elapsed}s` })
+      .setFooter({ text: `Dev: Katari x Obiyeuem • ${elapsed}s` })
       .setTimestamp();
 
     await loading.edit({
@@ -1024,66 +1024,82 @@ if (command === "get") {
   }
 }
 
-   // ======= LỆNH SPAM THẬT =======
+   // ======= LỆNH SPAM =======
 if (command === "spam") {
-    const uid = args[0];
+
+    const type = args[0]; // sinv / rinv
+    const uid = args[1];
 
     // ❌ Sai cú pháp
-    if (!uid || isNaN(uid)) {
-        const warn = await msg.reply("❌ Sai cú pháp! Dùng: `!spam <uid>`");
-        setTimeout(() => warn.delete().catch(() => {}), 3000);
+    if (!type || !uid || isNaN(uid)) {
+        const warn = await msg.reply(
+            "❌ Sai cú pháp!\nVí dụ:\n`!spam sinv 12345678`\n`!spam rinv 12345678`"
+        );
+
+        setTimeout(() => warn.delete().catch(() => {}), 4000);
         return;
     }
 
-    // Tin nhắn loading
-    const loadingMsg = await msg.reply(`⏳ Đang tiến hành spam team ${uid}...`);
+    // ❌ type không hợp lệ
+    if (!["sinv", "rinv"].includes(type)) {
+        return msg.reply("❌ Type chỉ có `sinv` (team) hoặc `rinv` (room)");
+    }
 
-    const apiUrl = `https://ff-community-apiemoteessss.onrender.com/invite?uid=${uid}&region=VN`;
+    const loadingMsg = await msg.reply(
+        `⏳ Đang spam ${type === "sinv" ? "tổ đội" : "phòng"} cho UID **${uid}**...`
+    );
+
+    const apiUrl = `https://taycommunity.spcfy.eu/spam?uid=${uid}&type=${type}&sl=50`;
 
     try {
+
         const res = await fetch(apiUrl);
         if (!res.ok) throw new Error("API lỗi");
+
         const data = await res.json();
 
-        const resultEmbed = new EmbedBuilder()
-            .setColor("#00ff80")
-            .setTitle("📨 Spam Kết Quả!")
+        const embed = new EmbedBuilder()
+            .setColor("#Green")
+            .setTitle("📨 Spam Thành Công")
             .setDescription(
-                `> UID: **${data.uid}**\n` +
-                `> Region: **${data.region}**\n` +
-                `> Status: **${data.status}**\n` +
-                `> Thông báo: ${data.message}`
+`> **UID:** \`${uid}\`
+> **Loại spam:** ${type === "sinv" ? "Spam tổ đội" : "Spam phòng"}
+> **Số lượng:** 50
+> **Bot:** ${data.BotName || "ＷＸＺ.ＯＢＩ┊ＭZPᰔ"}
+> **Trạng thái:** ${data.Message || "Hoàn tất"}`
             )
-            .setFooter({ text: "Dev Katari 📌" })
+            .setThumbnail(
+                msg.author.displayAvatarURL({ dynamic: true, size: 256 })
+            )
+            .setFooter({ text: "Dev Katari x Obiyeuem" })
             .setTimestamp();
 
-        await msg.channel.send({ embeds: [resultEmbed] });
-
-        // Xóa loading
-        setTimeout(() => loadingMsg.delete().catch(() => {}), 3000);
+        await loadingMsg.edit({
+            content: "✅ Spam hoàn tất!",
+            embeds: [embed]
+        });
 
     } catch (err) {
+
         console.error(err);
 
         const errorEmbed = new EmbedBuilder()
             .setColor("#ff0000")
-            .setDescription("> ❌ Lỗi: Không thể kết nối đến API spam.")
-            .setFooter({ text: "Dev Katari 📌" })
+            .setDescription("> ❌ Không thể kết nối API spam.")
+            .setFooter({ text: "Dev Katari x Obiyeuem" })
             .setTimestamp();
 
-        const errMsg = await msg.channel.send({ embeds: [errorEmbed] });
-
-        // Xóa lỗi + loading
-        setTimeout(() => {
-            errMsg.delete().catch(() => {});
-            loadingMsg.delete().catch(() => {});
-        }, 3000);
+        await loadingMsg.edit({
+            content: null,
+            embeds: [errorEmbed]
+        });
     }
 }
 // ======= HẾT LỆNH SPAM =======
 
-   // ===================== LỆNH !GHOST (EMBED MỚI) =====================
+   // ===================== LỆNH !GHOST =====================
 if (command === "ghost") {
+
   const code = args[0];
 
   // ❌ Sai cú pháp
@@ -1091,42 +1107,43 @@ if (command === "ghost") {
     const msgError = await msg.reply(
       "> ❌ Sai cú pháp!\n> Ví dụ: `!ghost 1455154`"
     );
+
     setTimeout(() => msgError.delete().catch(() => {}), 5000);
     return;
   }
 
-  // Loading
+  // ⏳ Loading
   const loading = await msg.reply(
     `👻 **Đang ghost teamcode...**\n> TeamCode: **${code}**`
   );
 
   try {
-    const url = `https://ghost-code-amph.onrender.com/execute_command_all?command=/bngx=${code}`;
-    const res = await axios.get(url);
-    const results = res.data?.results || {};
+
+    const url = `https://taycommunity.spcfy.eu/ghost?teamcode=${code}`;
+    const res = await fetch(url);
+
+    if (!res.ok) throw new Error("API lỗi");
+
+    const data = await res.json();
+
+    const botName = data.BotName || "N/A";
+    const message = data.Message || "Thành công";
+    const teamcode = data.Teamcode || code;
 
     const embed = new EmbedBuilder()
-      .setColor(0x00c3ff)
+      .setColor(Green)
       .setTitle("👻 Ghost TeamCode thành công")
       .setDescription(
-        `> Người yêu cầu: <@${msg.author.id}>\n` +
-        `> TeamCode: **${code}**\n\n` +
-        `📋 **Danh sách tài khoản đã ghost:**`
+`> **Người yêu cầu:** <@${msg.author.id}>
+> **TeamCode:** \`${teamcode}\`
+> **Bot thực hiện:** ${botName}
+> 📩 **Trạng thái:** ${message}`
       )
-      .setFooter({ text: "Dev Katari📌" })
+      .setThumbnail(
+        msg.author.displayAvatarURL({ dynamic: true, size: 256 })
+      )
+      .setFooter({ text: "Dev Katari x Obiyeuem" })
       .setTimestamp();
-
-    for (const id in results) {
-      let name = "Không tìm thấy";
-      const match = results[id]?.match(/Name:\s*(.*)$/);
-      if (match?.[1]) name = match[1].trim();
-
-      embed.addFields({
-        name: `🆔 UID: ${id}`,
-        value: `👤 Tên: **${name}**`,
-        inline: false
-      });
-    }
 
     await loading.edit({
       content: "✅ **Ghost hoàn tất!**",
@@ -1134,15 +1151,18 @@ if (command === "ghost") {
     });
 
   } catch (err) {
+
+    console.error(err);
+
     const errorEmbed = new EmbedBuilder()
       .setColor(0xff0000)
       .setTitle("❌ Ghost TeamCode thất bại")
       .setDescription(
-        `> TeamCode: **${code}**\n` +
+        `> **TeamCode:** ${code}\n` +
         `> API không phản hồi hoặc gặp lỗi.\n\n` +
         `⚠️ Vui lòng thử lại sau.`
       )
-      .setFooter({ text: "Dev Katari📌" })
+      .setFooter({ text: "Dev Katari x Obiyeuem" })
       .setTimestamp();
 
     await loading.edit({
@@ -1152,20 +1172,21 @@ if (command === "ghost") {
 
     setTimeout(() => loading.delete().catch(() => {}), 5000);
   }
+
 }
 // ===================== HẾT LỆNH !GHOST =====================
 
    // ===================== LỆNH !TEAM3 / !TEAM4 / !TEAM5 / !TEAM6 =====================
 if (command.startsWith("team")) {
 
-    const teamNumber = command.replace("team", ""); // lấy số sau chữ team
+    const teamNumber = command.replace("team", "");
     const uid = args[0];
 
     // ❌ team không hợp lệ
     if (!["3", "4", "5", "6"].includes(teamNumber)) return;
 
     // ❌ Sai cú pháp
-    if (!uid) {
+    if (!uid || isNaN(uid)) {
         const errMsg = await msg.reply(
             `> ❌ Sai cú pháp!\n> Ví dụ: \`!team${teamNumber} 12345678\``
         );
@@ -1184,32 +1205,44 @@ if (command.startsWith("team")) {
         `> Chuẩn bị mời **UID: ${uid}**`
     );
 
-    // ✅ API động theo số team
-    const apiUrl = `https://team-create.onrender.com/${teamNumber}?uid=${uid}`;
+    // ✅ API mới
+    const apiUrl = `https://taycommunity.spcfy.eu/creatsquad?uid=${uid}&team=${teamNumber}`;
 
     try {
+
         const res = await fetch(apiUrl);
         if (!res.ok) throw new Error("API lỗi");
 
-        await res.json(); // chỉ cần gọi API
+        const data = await res.json();
+
+        const botName = data.BotName || "N/A";
+        const message = data.Message || "Đã gửi lời mời";
+        const target = data.Target || uid;
+        const team = data.Team || teamNumber;
 
         const embed = new EmbedBuilder()
-            .setColor(0x00c3ff)
-            .setTitle(`🎮 Team ${teamNumber} đã sẵn sàng`)
+            .setColor(Green)
+            .setTitle(`🎮 Team ${team} đã sẵn sàng`)
             .setDescription(
-                `> Người dùng yêu cầu: <@${msg.author.id}>\n` +
-                `> Sẵn sàng mời **UID: ${uid}**\n\n` +
-                `✨ Team đã được tạo thành công!`
+`> **Người yêu cầu:** <@${msg.author.id}>
+> **UID mục tiêu:** \`${target}\`
+> **Team:** ${team}
+> **Bot mời:** ${botName}
+> 📩 ${message}`
             )
-            .setFooter({ text: "Dev Katari📌" })
+            .setThumbnail(
+                msg.author.displayAvatarURL({ dynamic: true, size: 256 })
+            )
+            .setFooter({ text: "Dev Katari x Obiyeuem" })
             .setTimestamp();
 
         await loadingMsg.edit({
-            content: "✅ **Hoàn tất! Hãy chấp nhận lời mời:**",
+            content: "✅ **Hoàn tất! Hãy chấp nhận lời mời trong game.**",
             embeds: [embed]
         });
 
     } catch (err) {
+
         console.error(err);
 
         const errMsg = await msg.reply(
@@ -1372,7 +1405,7 @@ if (command === "emote") {
         const data = await res.json();
 
         const embed = new EmbedBuilder()
-            .setColor(0x00c3ff)
+            .setColor(Green)
             .setTitle("🎭 Gửi Emote Thành Công!")
             .setDescription(
                 `> Người dùng: <@${msg.author.id}>\n` +
@@ -1628,7 +1661,7 @@ if (command === "emotes") {
             `${uid6 ? `• ${uid6}\n` : ""}`;
 
         const embed = new EmbedBuilder()
-            .setColor(0x00c3ff)
+            .setColor(Green)
             .setTitle("🎭 Gửi Emote Thành Công!")
             .setDescription(
                 `> Người dùng: <@${msg.author.id}>\n` +
@@ -1767,7 +1800,7 @@ if (command === "randoms") {
 
         if (!randomsStop) {
             const embed = new EmbedBuilder()
-                .setColor(0x00ff9c)
+                .setColor(Green)
                 .setTitle("🤖 Auto Emote Hoàn Tất!")
                 .setDescription(
                     `> Team code: **${teamcode}**\n` +
@@ -1967,7 +2000,7 @@ if (command === "search") {
       const bannerImg = `https://card.sukhdaku.qzz.io/api/profile?uid=${uid}`;
 
       const embed = new EmbedBuilder()
-        .setColor(0x00c3ff)
+        .setColor(Green)
         .setTitle(`🔎 Kết quả Tìm Kiếm ${index}/${results.length}`)
         .setDescription(
           `> **Tên người chơi:** ${name}\n` +
@@ -2001,6 +2034,78 @@ if (command === "search") {
   }
 }
 // ======= HẾT LỆNH SEARCH =======
+
+   // ===================== LỆNH !TODOI =====================
+if (command === "todoi") {
+
+    const teamcode = args[0];
+    const message = args.slice(1).join(" ");
+
+    // ❌ Sai cú pháp
+    if (!teamcode || !message) {
+        const warn = await msg.reply(
+            "❌ Sai cú pháp!\nVí dụ:\n`!todoi 1234567 hello team`"
+        );
+
+        setTimeout(() => warn.delete().catch(() => {}), 4000);
+        return;
+    }
+
+    // Loading
+    const loading = await msg.reply(
+        `💬 Đang gửi tin nhắn vào tổ đội...\n> TeamCode: **${teamcode}**`
+    );
+
+    const apiUrl = `https://taycommunity.spcfy.eu/msg?teamcode=${teamcode}&message=${encodeURIComponent(message)}`;
+
+    try {
+
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error("API lỗi");
+
+        const data = await res.json();
+
+        const embed = new EmbedBuilder()
+            .setColor("Green")
+            .setTitle("📢 Gửi Tin Nhắn Tổ Đội")
+            .setDescription(
+`> **Người yêu cầu:** <@${msg.author.id}>
+> **TeamCode:** \`${teamcode}\`
+> **Tin nhắn:** ${message}
+> **Bot:** ${data.BotName || "ＷＸＺ.ＯＢＩ┊ＭZPᰔ"}
+> **Trạng thái:** ${data.Message || "Đã gửi"}`
+            )
+            .setThumbnail(
+                msg.author.displayAvatarURL({ dynamic: true, size: 256 })
+            )
+            .setFooter({ text: "Dev Katari x Obiyeuem" })
+            .setTimestamp();
+
+        await loading.edit({
+            content: "✅ Gửi tin nhắn thành công!",
+            embeds: [embed]
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        const errorEmbed = new EmbedBuilder()
+            .setColor("#ff0000")
+            .setTitle("❌ Gửi Tin Nhắn Thất Bại")
+            .setDescription(
+                `> TeamCode: **${teamcode}**\n> API không phản hồi hoặc gặp lỗi.`
+            )
+            .setFooter({ text: "Dev Katari x Obiyeuem" })
+            .setTimestamp();
+
+        await loading.edit({
+            content: null,
+            embeds: [errorEmbed]
+        });
+    }
+}
+// ===================== HẾT LỆNH !TODOI =====================
 
   // ======= QUẢN LÝ AUTOLIKE HÀNG NGÀY =======
 
