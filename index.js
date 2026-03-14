@@ -772,66 +772,79 @@ if (command === "check") {
 
   // ======= LỆNH VISITS =======
 if (command === "visits") {
-  if (args.length < 2) {
+
+  const uid = args[0];
+
+  if (!uid || isNaN(uid)) {
     return msg.reply(
-      "❌ Sai cú pháp!\n> Ví dụ: `!visits vn 12345678`"
+      "❌ Sai cú pháp!\n> Ví dụ: `!visits 12345678`"
     );
   }
 
-  const region = args[0].toLowerCase();
-  const uid = args[1];
-
-  if (isNaN(uid)) {
-    return msg.reply("❌ UID không hợp lệ!");
-  }
-
-  const apiUrl = `https://sulav-ajay-visits.vercel.app/${region}/${uid}`;
+  const apiUrl = `https://freefireservicevisit.spcfy.eu/visit?uid=${uid}`;
   const startTime = Date.now();
 
   const loading = await msg.reply(
-    `🌍 Đang tiến hành tăng lượt xem cho UID **${uid}**...`
+    `🌍 Đang gửi visit cho UID **${uid}**...`
   );
 
   try {
+
     const res = await fetch(apiUrl);
     if (!res.ok) throw new Error("API không phản hồi");
 
-    const data = await res.json();
+    const json = await res.json();
+
+    const user = json.data["User Info"];
+    const stats = json.data["Request Stats"];
+
+    const nickname = user["Account Name"] || "N/A";
+    const region = user["Account Region"] || "N/A";
+    const level = user["Account Level"] ?? "N/A";
+    const likes = user["Account Likes"] ?? 0;
+    const playerUID = user["Account UID"] || uid;
+
+    const success = stats["Visit Sent"] ?? 0;
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
 
     const embed = new EmbedBuilder()
       .setColor(0x00c3ff)
-      .setTitle("📊 KẾT QUẢ VISITS")
+      .setTitle("👁️ KẾT QUẢ VISITS")
       .setDescription(
-        `> **Tên:** ${data.nickname || "N/A"}\n` +
-        `> **Khu vực:** ${data.region || region.toUpperCase()}\n` +
-        `> **UID:** ${data.uid || uid}\n` +
-        `> **Cấp độ:** ${data.level ?? "N/A"}\n` +
-        `> **Lượt thích:** ${data.likes ?? 0}\n` +
-        `> **Thành công:** ${data.success ?? 0}\n` +
-        `> **Thất bại:** ${data.fail ?? 0}`
+`> **Tên:** ${nickname}
+> **UID:** \`${playerUID}\`
+> **Khu vực:** ${region}
+> **Cấp độ:** ${level}
+> **Lượt thích:** ${likes}
+> **Visit đã gửi:** ${success}`
       )
-      // Avatar Discord người dùng (góc phải)
       .setThumbnail(
         msg.author.displayAvatarURL({ dynamic: true, size: 256 })
       )
       .setFooter({ text: `Dev: Katari • ${elapsed}s` })
       .setTimestamp();
 
-    await loading.edit({ content: null, embeds: [embed] });
+    await loading.edit({
+      content: null,
+      embeds: [embed]
+    });
 
   } catch (err) {
+
     console.error(err);
 
     const errMsg = await loading.edit(
-      "❌ Không thể tăng visit.\n> API lỗi hoặc không phản hồi."
+      "❌ Không thể gửi visit.\n> API lỗi hoặc không phản hồi."
     );
 
     setTimeout(() => {
       errMsg.delete().catch(() => {});
       msg.delete().catch(() => {});
     }, 5000);
+
   }
+
 }
 // ======= HẾT LỆNH VISITS =======
 
