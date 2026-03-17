@@ -515,9 +515,27 @@ if (command === "katari") {
 
   // ======= LỆNH LIKE =======
 if (command === "like") {
+  
+  // ID kênh được phép sử dụng lệnh like
+  const allowedChannelId = "1450083680977555523";
+
+  // Kiểm tra xem có đúng kênh không
+  if (msg.channel.id !== allowedChannelId) {
+    const channelWarn = await msg.reply(
+      `❌ Lệnh này chỉ được dùng tại kênh <#${allowedChannelId}>!`
+    );
+    
+    // Tự động xóa tin nhắn cảnh báo và lệnh sai sau 5 giây
+    setTimeout(() => {
+      channelWarn.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+    return; // Dừng thực hiện lệnh
+  }
 
   const uid = args[0];
 
+  // Kiểm tra cú pháp UID
   if (!uid || isNaN(uid)) {
     const warn = await msg.reply(
       "❌ Sai cú pháp!\n\nVí dụ:\n```bash\n!like 12345678\n```"
@@ -535,14 +553,12 @@ if (command === "like") {
   );
 
   try {
-
     const apiUrl = `https://ff.garena.cloud/like?uid=${uid}&server=vn&key=FREE-FIRE-LIKE-API`;
 
     const res = await fetch(apiUrl);
     const data = await res.json();
 
     if (data.success === 1 && data.status === true) {
-
       const r = data.response;
 
       const nickname = r.PlayerNickname || "N/A";
@@ -576,7 +592,6 @@ if (command === "like") {
       });
 
     } else {
-
       const errMsg = await processing.edit(
         "⚠️ UID này đã **MAX LIKE** hoặc API không thể gửi thêm."
       );
@@ -584,13 +599,10 @@ if (command === "like") {
       setTimeout(() => {
         errMsg.delete().catch(() => {});
       }, 10000);
-
     }
 
   } catch (err) {
-
     console.error(err);
-
     const errMsg = await processing.edit(
       "❌ Không thể kết nối API Like."
     );
@@ -598,14 +610,30 @@ if (command === "like") {
     setTimeout(() => {
       errMsg.delete().catch(() => {});
     }, 10000);
-
   }
-
 }
 // ======= HẾT LỆNH LIKE =======
 
   // ======= LỆNH INFO =======
 if (command === "info") {
+
+  // ID kênh được phép sử dụng lệnh info
+  const allowedInfoChannel = "1450083732211109928";
+
+  // Kiểm tra xem có đúng kênh cho phép không
+  if (msg.channel.id !== allowedInfoChannel) {
+    const channelWarn = await msg.reply(
+      `❌ Lệnh này chỉ được dùng tại kênh: <#${allowedInfoChannel}>!`
+    );
+    
+    // Tự động xóa tin nhắn cảnh báo và lệnh sai sau 5 giây để tránh rác server
+    setTimeout(() => {
+      channelWarn.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+    return; // Dừng thực hiện các dòng code bên dưới
+  }
+
   const uid = args[0];
   if (!uid || isNaN(uid)) return;
 
@@ -635,9 +663,28 @@ if (command === "info") {
     processing.edit({ content: "⚠️ Không thể lấy dữ liệu người chơi!", files: [] });
   }
 }
+// ======= HẾT LỆNH INFO =======
 
   // ======= LỆNH CHECK =======
 if (command === "check") {
+  
+  // ID kênh được phép sử dụng lệnh check ban
+  const allowedCheckChannel = "1450084107051733133";
+
+  // Kiểm tra xem có đúng kênh cho phép không
+  if (msg.channel.id !== allowedCheckChannel) {
+    const channelWarn = await msg.reply(
+      `❌ Lệnh này chỉ được dùng tại kênh: <#${allowedCheckChannel}>!`
+    );
+    
+    // Tự động xóa tin nhắn cảnh báo và lệnh sai sau 5 giây
+    setTimeout(() => {
+      channelWarn.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+    return; // Dừng thực hiện lệnh
+  }
+
   const uid = args[0];
   if (!uid || isNaN(uid)) return msg.reply("❌ UID không hợp lệ!");
 
@@ -647,7 +694,6 @@ if (command === "check") {
   });
 
   try {
-
     // ===== API CHECK BAN MỚI =====
     const res = await fetch(`http://raw.thug4ff.xyz/check?uid=${uid}&key=great`);
     const data = await res.json();
@@ -657,7 +703,6 @@ if (command === "check") {
     }
 
     const player = data.data;
-
     const nickname = player.nickname || "N/A";
     const region = player.region || "N/A";
     const level = player.level ?? "N/A";
@@ -676,7 +721,6 @@ if (command === "check") {
 
     // ❌ BAN VĨNH VIỄN
     if (banStatus === 1) {
-
       title = "⛔ Người chơi bị CẤM VĨNH VIỄN";
       color = "Red";
       image = "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253290639370/standard-1.gif";
@@ -692,16 +736,14 @@ if (command === "check") {
 
     // ⚠️ BAN TẠM THỜI
     else if (banStatus === 2) {
+      title = "⚠️ Người chơi bị BAN TẠM THỜI";
+      color = "Orange";
+      image = "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253290639370/standard-1.gif";
 
-  title = "⚠️ Người chơi bị BAN TẠM THỜI";
-  color = "Orange";
+      const banStart = banInfo.start_ban;
+      const banEnd = banStart + banInfo.remaining_seconds;
 
-  image = "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253290639370/standard-1.gif";
-
-  const banStart = banInfo.start_ban;
-  const banEnd = banStart + banInfo.remaining_seconds;
-
-  description = `
+      description = `
 > **Trạng thái:** Tài khoản đang bị ban tạm thời, không nên log vào khi bị ban id (tạm thời) tránh ban cứ tiếp diễn.
 > **Tên:** ${nickname}
 > **UID:** \`${uid}\`
@@ -710,15 +752,12 @@ if (command === "check") {
 > **Bắt đầu ban:** <t:${banStart}:f>
 > **Thời gian ban tạm thời kết thúc sau:** <t:${banEnd}:f>
 `;
-
-}
+    }
 
     // ✅ KHÔNG BAN
     else {
-
       title = "✅ Người chơi an toàn";
       color = "Green";
-
       image = "https://cdn.discordapp.com/attachments/1227567434483896370/1352329253886361610/standard-2.gif";
 
       description =
@@ -728,22 +767,16 @@ if (command === "check") {
 > **Khu vực:** ${region}
 > **Cấp độ:** ${level}
 > **Lần đăng nhập cuối:** ${formatTimestamp(lastLogin)}`;
-
     }
 
     const embed = new EmbedBuilder()
       .setTitle(title)
       .setColor(color)
       .setDescription(description)
-
-      // avatar discord góc phải
       .setThumbnail(
         msg.author.displayAvatarURL({ dynamic: true, size: 256 })
       )
-
-      // gif minh họa
       .setImage(image)
-
       .setFooter({ text: "Dev: Katari 📌" })
       .setTimestamp();
 
@@ -754,9 +787,7 @@ if (command === "check") {
     });
 
   } catch (err) {
-
     console.error(err);
-
     try {
       await processing.edit({
         content: "🚫 Không thể kiểm tra người chơi!\n> API không phản hồi.",
@@ -765,7 +796,6 @@ if (command === "check") {
     } catch {
       await msg.channel.send("🚫 Không thể kiểm tra người chơi!\n> API không phản hồi.");
     }
-
   }
 }
 // ======= HẾT LỆNH CHECK =======
@@ -773,12 +803,35 @@ if (command === "check") {
   // ======= LỆNH VISITS =======
 if (command === "visits") {
 
+  // ID kênh được phép sử dụng lệnh visits
+  const allowedVisitsChannel = "1450084200475525211";
+
+  // Kiểm tra xem có đúng kênh cho phép không
+  if (msg.channel.id !== allowedVisitsChannel) {
+    const channelWarn = await msg.reply(
+      `❌ Lệnh này chỉ được dùng tại kênh: <#${allowedVisitsChannel}>!`
+    );
+    
+    // Xóa cảnh báo và lệnh sai sau 5 giây
+    setTimeout(() => {
+      channelWarn.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+    return; // Dừng thực hiện lệnh
+  }
+
   const uid = args[0];
 
   if (!uid || isNaN(uid)) {
-    return msg.reply(
+    const warn = await msg.reply(
       "❌ Sai cú pháp!\n> Ví dụ: `!visits 12345678`"
     );
+    
+    setTimeout(() => {
+      warn.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+    return;
   }
 
   const apiUrl = `https://freefireservicevisit.spcfy.eu/visit?uid=${uid}`;
@@ -789,7 +842,6 @@ if (command === "visits") {
   );
 
   try {
-
     const res = await fetch(apiUrl);
     if (!res.ok) throw new Error("API không phản hồi");
 
@@ -831,7 +883,6 @@ if (command === "visits") {
     });
 
   } catch (err) {
-
     console.error(err);
 
     const errMsg = await loading.edit(
@@ -842,9 +893,7 @@ if (command === "visits") {
       errMsg.delete().catch(() => {});
       msg.delete().catch(() => {});
     }, 5000);
-
   }
-
 }
 // ======= HẾT LỆNH VISITS =======
 
@@ -1027,22 +1076,48 @@ if (command === "get") {
    // ======= LỆNH SPAM =======
 if (command === "spam") {
 
+    // ID kênh được phép sử dụng lệnh spam
+    const allowedSpamChannel = "1450084239201665157";
+
+    // 1. Kiểm tra xem có đúng kênh cho phép không
+    if (msg.channel.id !== allowedSpamChannel) {
+        const channelWarn = await msg.reply(
+            `❌ Lệnh này chỉ được dùng tại kênh: <#${allowedSpamChannel}>!`
+        );
+        
+        // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+        setTimeout(() => {
+            channelWarn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return; // Dừng thực hiện lệnh
+    }
+
     const type = args[0]; // sinv / rinv
     const uid = args[1];
 
-    // ❌ Sai cú pháp
+    // 2. Kiểm tra sai cú pháp
     if (!type || !uid || isNaN(uid)) {
         const warn = await msg.reply(
             "❌ Sai cú pháp!\nVí dụ:\n`!spam sinv 12345678`\n`!spam rinv 12345678`"
         );
 
-        setTimeout(() => warn.delete().catch(() => {}), 4000);
+        setTimeout(() => {
+            warn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
         return;
     }
 
-    // ❌ type không hợp lệ
+    // 3. Kiểm tra type không hợp lệ
     if (!["sinv", "rinv"].includes(type)) {
-        return msg.reply("❌ Type chỉ có `sinv` (team) hoặc `rinv` (room)");
+        const typeWarn = await msg.reply("❌ Type chỉ có `sinv` (team) hoặc `rinv` (room)");
+        
+        setTimeout(() => {
+            typeWarn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return;
     }
 
     const loadingMsg = await msg.reply(
@@ -1052,7 +1127,6 @@ if (command === "spam") {
     const apiUrl = `https://taycommunity.spcfy.eu/spam?uid=${uid}&type=${type}&sl=50`;
 
     try {
-
         const res = await fetch(apiUrl);
         if (!res.ok) throw new Error("API lỗi");
 
@@ -1080,7 +1154,6 @@ if (command === "spam") {
         });
 
     } catch (err) {
-
         console.error(err);
 
         const errorEmbed = new EmbedBuilder()
@@ -1100,15 +1173,35 @@ if (command === "spam") {
    // ===================== LỆNH !GHOST =====================
 if (command === "ghost") {
 
+  // ID kênh được phép sử dụng lệnh ghost
+  const allowedGhostChannel = "1450085263744434270";
+
+  // 1. Kiểm tra xem có đúng kênh cho phép không
+  if (msg.channel.id !== allowedGhostChannel) {
+    const channelWarn = await msg.reply(
+      `❌ Lệnh này chỉ được dùng tại kênh: <#${allowedGhostChannel}>!`
+    );
+    
+    // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+    setTimeout(() => {
+      channelWarn.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+    return; // Dừng thực hiện lệnh
+  }
+
   const code = args[0];
 
-  // ❌ Sai cú pháp
+  // 2. Kiểm tra sai cú pháp
   if (!code || isNaN(code)) {
     const msgError = await msg.reply(
       "> ❌ Sai cú pháp!\n> Ví dụ: `!ghost 1455154`"
     );
 
-    setTimeout(() => msgError.delete().catch(() => {}), 5000);
+    setTimeout(() => {
+      msgError.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
     return;
   }
 
@@ -1118,7 +1211,6 @@ if (command === "ghost") {
   );
 
   try {
-
     const url = `https://taycommunity.spcfy.eu/ghost?teamcode=${code}`;
     const res = await fetch(url);
 
@@ -1151,7 +1243,6 @@ if (command === "ghost") {
     });
 
   } catch (err) {
-
     console.error(err);
 
     const errorEmbed = new EmbedBuilder()
@@ -1170,22 +1261,39 @@ if (command === "ghost") {
       embeds: [errorEmbed]
     });
 
+    // Xóa thông báo lỗi sau 5 giây để tránh rác kênh
     setTimeout(() => loading.delete().catch(() => {}), 5000);
   }
-
 }
 // ===================== HẾT LỆNH !GHOST =====================
 
    // ===================== LỆNH !TEAM3 / !TEAM4 / !TEAM5 / !TEAM6 =====================
 if (command.startsWith("team")) {
 
+    // ID kênh được phép sử dụng các lệnh team
+    const allowedTeamChannel = "1450085637020717117";
+
+    // 1. Kiểm tra xem có đúng kênh cho phép không
+    if (msg.channel.id !== allowedTeamChannel) {
+        const channelWarn = await msg.reply(
+            `❌ Các lệnh tạo team chỉ được dùng tại kênh: <#${allowedTeamChannel}>!`
+        );
+        
+        // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+        setTimeout(() => {
+            channelWarn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return; // Dừng thực hiện lệnh
+    }
+
     const teamNumber = command.replace("team", "");
     const uid = args[0];
 
-    // ❌ team không hợp lệ
+    // ❌ team không hợp lệ (Nếu gõ !team đơn thuần hoặc !team99 chẳng hạn)
     if (!["3", "4", "5", "6"].includes(teamNumber)) return;
 
-    // ❌ Sai cú pháp
+    // 2. Kiểm tra sai cú pháp UID
     if (!uid || isNaN(uid)) {
         const errMsg = await msg.reply(
             `> ❌ Sai cú pháp!\n> Ví dụ: \`!team${teamNumber} 12345678\``
@@ -1209,7 +1317,6 @@ if (command.startsWith("team")) {
     const apiUrl = `https://taycommunity.spcfy.eu/creatsquad?uid=${uid}&team=${teamNumber}`;
 
     try {
-
         const res = await fetch(apiUrl);
         if (!res.ok) throw new Error("API lỗi");
 
@@ -1242,19 +1349,21 @@ if (command.startsWith("team")) {
         });
 
     } catch (err) {
-
         console.error(err);
 
         const errMsg = await msg.reply(
             "❌ **Không thể tạo team. API gặp lỗi hoặc không phản hồi.**"
         );
 
-        setTimeout(() => errMsg.delete().catch(() => {}), 5000);
+        setTimeout(() => {
+            errMsg.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
 
-        msg.delete().catch(() => {});
         loadingMsg.delete().catch(() => {});
     }
 }
+// ===================== HẾT LỆNH TEAM =====================
 
    // ===================== LỆNH !LAG =====================
 if (command === "lag") { // loại bỏ "!" ở đây
@@ -1319,11 +1428,29 @@ if (command === "lag") { // loại bỏ "!" ở đây
 
    // ===================== LỆNH !EMOTE (1 người) =====================
 if (command === "emote") {
+
+    // ID kênh được phép sử dụng lệnh emote
+    const allowedEmoteChannel = "1450085765764747420";
+
+    // 1. Kiểm tra xem có đúng kênh cho phép không
+    if (msg.channel.id !== allowedEmoteChannel) {
+        const channelWarn = await msg.reply(
+            `❌ Lệnh emote chỉ được dùng tại kênh: <#${allowedEmoteChannel}>!`
+        );
+        
+        // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+        setTimeout(() => {
+            channelWarn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return; // Dừng thực hiện lệnh
+    }
+
     const teamcode = args[0];
     const uid = args[1];
     let emoteInput = args[2]; // có thể là tên hoặc ID
 
-    // ❌ Sai cú pháp
+    // 2. Kiểm tra sai cú pháp
     if (!teamcode || !uid || !emoteInput) {
         const errMsg = await msg.reply(
             "> ❌ Sai cú pháp!\n" +
@@ -1427,19 +1554,45 @@ if (command === "emote") {
         const errMsg = await msg.reply(
             "❌ **Không thể gửi emote. API gặp lỗi hoặc không phản hồi.**"
         );
-        setTimeout(() => errMsg.delete().catch(() => {}), 5000);
+        
+        setTimeout(() => {
+            errMsg.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        
         loadingMsg.delete().catch(() => {});
     }
 }
+// ===================== HẾT LỆNH EMOTE =====================
 
     // ===================== LỆNH !RANDOM (AUTO EMOTE 1 UID) =====================
 if (command === "random") {
+
+    // ID kênh được phép sử dụng lệnh random (chung kênh với emote)
+    const allowedRandomChannel = "1450085765764747420";
+
+    // 1. Kiểm tra xem có đúng kênh cho phép không
+    if (msg.channel.id !== allowedRandomChannel) {
+        const channelWarn = await msg.reply(
+            `❌ Lệnh auto emote chỉ được dùng tại kênh: <#${allowedRandomChannel}>!`
+        );
+        
+        // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+        setTimeout(() => {
+            channelWarn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return; // Dừng thực hiện lệnh
+    }
 
     // ================= STOP =================
     if (args[0] === "stop") {
         if (!randomRunning) {
             const m = await msg.reply("⚠️ **Hiện không có auto emote nào đang chạy!**");
-            return setTimeout(() => m.delete().catch(() => {}), 5000);
+            return setTimeout(() => {
+                m.delete().catch(() => {});
+                msg.delete().catch(() => {});
+            }, 5000);
         }
 
         if (
@@ -1447,12 +1600,18 @@ if (command === "random") {
             !msg.member.permissions.has("Administrator")
         ) {
             const m = await msg.reply("🚫 **Bạn không có quyền dừng auto này!**");
-            return setTimeout(() => m.delete().catch(() => {}), 5000);
+            return setTimeout(() => {
+                m.delete().catch(() => {});
+                msg.delete().catch(() => {});
+            }, 5000);
         }
 
         randomStop = true;
         const m = await msg.reply("🛑 **Đã gửi yêu cầu dừng auto emote!**");
-        return setTimeout(() => m.delete().catch(() => {}), 5000);
+        return setTimeout(() => {
+            m.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
     }
 
     // ================= CHECK ĐANG CHẠY =================
@@ -1460,7 +1619,10 @@ if (command === "random") {
         const m = await msg.reply(
             `⏳ **Đang có auto khác chạy!**\n👤 Người dùng: <@${randomUserId}>`
         );
-        return setTimeout(() => m.delete().catch(() => {}), 5000);
+        return setTimeout(() => {
+            m.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
     }
 
     const teamcode = args[0];
@@ -1470,7 +1632,10 @@ if (command === "random") {
         const m = await msg.reply(
             "> ❌ Sai cú pháp!\n> Ví dụ: `!random 1234567 12345678`"
         );
-        return setTimeout(() => m.delete().catch(() => {}), 5000);
+        return setTimeout(() => {
+            m.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
     }
 
     // ================= KHÓA CHUNG =================
@@ -1555,9 +1720,28 @@ if (command === "random") {
     randomStop = false;
     randomMessage = null;
 }
+// ===================== HẾT LỆNH RANDOM =====================
 
    // ===================== LỆNH !EMOTES (MULTI UID) =====================
 if (command === "emotes") {
+
+    // ID kênh được phép sử dụng lệnh emotes (chung kênh với emote và random)
+    const allowedEmotesChannel = "1450085765764747420";
+
+    // 1. Kiểm tra xem có đúng kênh cho phép không
+    if (msg.channel.id !== allowedEmotesChannel) {
+        const channelWarn = await msg.reply(
+            `❌ Lệnh emote nhiều người chỉ được dùng tại kênh: <#${allowedEmotesChannel}>!`
+        );
+        
+        // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+        setTimeout(() => {
+            channelWarn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return; // Dừng thực hiện lệnh
+    }
+
     const teamcode = args[0];
     const uid1 = args[1];
     const uid2 = args[2];
@@ -1567,7 +1751,7 @@ if (command === "emotes") {
     const uid6 = args[6];
     const emoteInput = args[7]; // tên hoặc ID
 
-    // ❌ Sai cú pháp
+    // 2. Kiểm tra sai cú pháp
     if (!teamcode || !uid1 || !emoteInput) {
         const m = await msg.reply(
             "> ❌ Sai cú pháp!\n" +
@@ -1575,60 +1759,32 @@ if (command === "emotes") {
             "> `!emotes 1234567 111 m60`\n" +
             "> `!emotes 1234567 111 222 333 444 naruto`"
         );
-        return setTimeout(() => m.delete().catch(() => {}), 6000);
+        
+        setTimeout(() => {
+            m.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 6000);
+        return;
     }
 
     // ================= MAP EMOTE (GIỮ NGUYÊN) =================
     const emoteMap = {
-        ak47: "909000063",
-        scar: "909000068",
-        mp401: "909000075",
-        mp402: "909040010",
-        m10141: "909000081",
-        m10142: "909039011",
-        xm8: "909000085",
-        ump: "909000098",
-        mp5: "909033002",
-        famas: "909000090",
-        m1887: "909035007",
-        thomson: "909038010",
-        an94: "909035012",
-        m4a1: "909033001",
-        g18: "909038012",
-        namdam: "909037011",
-        groza: "909041005",
-        chimgokien: "909042008",
-        paralfell: "909045001",
-        p90: "909049010",
-        m60: "909051003",
-        ngaivang: "909000014",
-        camco: "909000034",
-        camco2: "909000128",
-        tanghoa: "909000010",
-        thatim: "909000045",
-        muaxe: "909000074",
-        muaxe2: "909000088",
-        lv100: "909042007",
-        tim: "909043010",
-        tim2: "909043013",
-        tim3: "909047003",
-        bapbenh: "909045012",
-        anmung: "909046004",
-        laugiay: "909046005",
-        narutodoi: "909050003",
-        lienket: "909049008",
-        cuu: "909050013",
-        choicungnhau: "909051017",
-        giangsinh1: "909051002",
-        giangsinh2: "909051018",
-        giangsinh3: "909051019",
-        giangsinh4: "909051020",
-        naruto: "909050002"
+        ak47: "909000063", scar: "909000068", mp401: "909000075", mp402: "909040010",
+        m10141: "909000081", m10142: "909039011", xm8: "909000085", ump: "909000098",
+        mp5: "909033002", famas: "909000090", m1887: "909035007", thomson: "909038010",
+        an94: "909035012", m4a1: "909033001", g18: "909038012", namdam: "909037011",
+        groza: "909041005", chimgokien: "909042008", paralfell: "909045001", p90: "909049010",
+        m60: "909051003", ngaivang: "909000014", camco: "909000034", camco2: "909000128",
+        tanghoa: "909000010", thatim: "909000045", muaxe: "909000074", muaxe2: "909000088",
+        lv100: "909042007", tim: "909043010", tim2: "909043013", tim3: "909047003",
+        bapbenh: "909045012", anmung: "909046004", laugiay: "909046005", narutodoi: "909050003",
+        lienket: "909049008", cuu: "909050013", choicungnhau: "909051017", giangsinh1: "909051002",
+        giangsinh2: "909051018", giangsinh3: "909051019", giangsinh4: "909051020", naruto: "909050002"
     };
 
     const emoteId = emoteMap[emoteInput.toLowerCase()] || emoteInput;
 
-    // ================= API EMOTE 1 NGƯỜI (JOIN) =================
+    // ================= API EMOTE NHIỀU NGƯỜI =================
     const apiUrl =
         `https://emote-api-xhi9.onrender.com/join` +
         `?tc=${teamcode}` +
@@ -1681,31 +1837,63 @@ if (command === "emotes") {
     } catch (err) {
         console.error(err);
         const m = await msg.reply("❌ **Không thể gửi emote – API lỗi**");
+        
         setTimeout(() => {
             m.delete().catch(() => {});
+            msg.delete().catch(() => {}); // Xóa luôn tin nhắn lệnh gốc
             loadingMsg.delete().catch(() => {});
         }, 5000);
     }
 }
+// ===================== HẾT LỆNH EMOTES =====================
 
     // ===================== LỆNH !RANDOMS (AUTO EMOTE MULTI UID) =====================
 if (command === "randoms") {
+
+    // ID kênh được phép sử dụng (Dùng chung với các lệnh emote khác)
+    const allowedRandomsChannel = "1450085765764747420";
+
+    // 1. Kiểm tra xem có đúng kênh cho phép không
+    if (msg.channel.id !== allowedRandomsChannel) {
+        const channelWarn = await msg.reply(
+            `❌ Lệnh auto emote nhiều người chỉ được dùng tại kênh: <#${allowedRandomsChannel}>!`
+        );
+        
+        // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+        setTimeout(() => {
+            channelWarn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return; // Dừng thực hiện lệnh
+    }
 
     // ================= STOP =================
     if (args[0] === "stop") {
         if (!randomsRunning) {
             const m = await msg.reply("⚠️ **Hiện không có auto emote nào đang chạy!**");
-            return setTimeout(() => m.delete().catch(() => {}), 5000);
+            setTimeout(() => {
+                m.delete().catch(() => {});
+                msg.delete().catch(() => {});
+            }, 5000);
+            return;
         }
 
         if (msg.author.id !== randomsUserId && !msg.member.permissions.has("Administrator")) {
             const m = await msg.reply("🚫 **Bạn không có quyền dừng auto emote này!**");
-            return setTimeout(() => m.delete().catch(() => {}), 5000);
+            setTimeout(() => {
+                m.delete().catch(() => {});
+                msg.delete().catch(() => {});
+            }, 5000);
+            return;
         }
 
         randomsStop = true;
         const m = await msg.reply("🛑 **Đã gửi yêu cầu dừng auto emote!**");
-        return setTimeout(() => m.delete().catch(() => {}), 5000);
+        setTimeout(() => {
+            m.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return;
     }
 
     // ================= CHECK ĐANG CHẠY =================
@@ -1713,7 +1901,11 @@ if (command === "randoms") {
         const m = await msg.reply(
             "⏳ **Auto emote đang được sử dụng!**\n⚠️ Vui lòng chờ hoàn tất."
         );
-        return setTimeout(() => m.delete().catch(() => {}), 5000);
+        setTimeout(() => {
+            m.reply.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return;
     }
 
     const teamcode = args[0];
@@ -1726,7 +1918,11 @@ if (command === "randoms") {
             "> `!randoms 1234567 111`\n" +
             "> `!randoms 1234567 111 222 333 444 555 666`"
         );
-        return setTimeout(() => m.delete().catch(() => {}), 6000);
+        setTimeout(() => {
+            m.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 6000);
+        return;
     }
 
     // ================= KHÓA =================
@@ -1736,24 +1932,11 @@ if (command === "randoms") {
 
     // ================= MAP EMOTE =================
     const emoteMap = {
-        ak47: "909000063",
-        scar: "909000068",
-        mp401: "909000075",
-        mp402: "909040010",
-        m10141: "909000081",
-        m10142: "909039011",
-        xm8: "909000085",
-        ump: "909000098",
-        mp5: "909033002",
-        famas: "909000090",
-        m1887: "909035007",
-        thomson: "909038010",
-        an94: "909035012",
-        m4a1: "909033001",
-        g18: "909038012",
-        groza: "909041005",
-        p90: "909049010",
-        m60: "909051003"
+        ak47: "909000063", scar: "909000068", mp401: "909000075", mp402: "909040010",
+        m10141: "909000081", m10142: "909039011", xm8: "909000085", ump: "909000098",
+        mp5: "909033002", famas: "909000090", m1887: "909035007", thomson: "909038010",
+        an94: "909035012", m4a1: "909033001", g18: "909038012", groza: "909041005",
+        p90: "909049010", m60: "909051003"
     };
 
     const emoteEntries = Object.entries(emoteMap);
@@ -1787,7 +1970,7 @@ if (command === "randoms") {
                 `⏱ Tiếp theo sau **5 giây**`
             );
 
-            // ✅ API MỚI
+            // ✅ API MỚI (Xây dựng URL động dựa trên số lượng UID)
             const apiUrl =
                 `https://emote-api-xhi9.onrender.com/join` +
                 `?tc=${teamcode}` +
@@ -1822,6 +2005,7 @@ if (command === "randoms") {
         setTimeout(() => {
             m.delete().catch(() => {});
             randomsMessage?.delete().catch(() => {});
+            msg.delete().catch(() => {});
         }, 5000);
     }
 
@@ -1831,6 +2015,7 @@ if (command === "randoms") {
     randomsStop = false;
     randomsMessage = null;
 }
+// ===================== HẾT LỆNH RANDOM S =====================
 
    // ======= LỆNH ADDFRIEND =======
 if (command === "addfriend") {
@@ -1938,20 +2123,37 @@ if (command === "removefriend") {
 
    // ======= LỆNH SEARCH =======
 if (command === "search") {
+
+  // ID kênh được phép sử dụng lệnh search
+  const allowedSearchChannel = "1463572250048594144";
+
+  // 1. Kiểm tra xem có đúng kênh cho phép không
+  if (msg.channel.id !== allowedSearchChannel) {
+    const channelWarn = await msg.reply(
+      `❌ Lệnh search chỉ được dùng tại kênh: <#${allowedSearchChannel}>!`
+    );
+    
+    // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+    setTimeout(() => {
+      channelWarn.delete().catch(() => {});
+      msg.delete().catch(() => {});
+    }, 5000);
+    return; // Dừng thực hiện lệnh
+  }
+
   const region = args[0];
   const nickname = args.slice(1).join(" ");
 
-  // ❌ Sai cú pháp
+  // 2. Kiểm tra sai cú pháp
   if (!region || !nickname) {
     const err = await msg.reply(
-      "> ❌ Sai cú pháp!\n> Ví dụ: !search vn Katari"
+      "> ❌ Sai cú pháp!\n> Ví dụ: `!search vn Katari`"
     );
 
     setTimeout(() => {
       err.delete().catch(() => {});
       msg.delete().catch(() => {});
     }, 5000);
-
     return;
   }
 
@@ -1967,7 +2169,7 @@ if (command === "search") {
     const data = await res.json();
     const results = data?.results || [];
 
-    // ❌ Không có kết quả
+    // 3. Kiểm tra nếu không có kết quả
     if (results.length === 0) {
       await loading.edit("❌ Không tìm thấy người chơi nào.");
 
@@ -1975,10 +2177,10 @@ if (command === "search") {
         loading.delete().catch(() => {});
         msg.delete().catch(() => {});
       }, 5000);
-
       return;
     }
 
+    // Xóa tin nhắn loading trước khi gửi danh sách kết quả
     await loading.delete().catch(() => {});
 
     let index = 0;
@@ -1993,8 +2195,6 @@ if (command === "search") {
       const lastLogin = acc.lastLogin || "N/A";
       const status = acc.status || "Unknown";
       const rg = acc.region || region.toUpperCase();
-
-      // Ngày tạo giữ nguyên JSON
       const createdAt = acc.detailed_info?.createAt || "N/A";
 
       const bannerImg = `https://card.sukhdaku.qzz.io/api/profile?uid=${uid}`;
@@ -2005,7 +2205,7 @@ if (command === "search") {
         .setDescription(
           `> **Tên người chơi:** ${name}\n` +
           `> **Khu vực:** :flag_${rg.toLowerCase()}: ${rg}\n` +
-          `> **UID người chơi:** ${uid}\n` +
+          `> **UID người chơi:** \`${uid}\`\n` +
           `> **Cấp độ:** ${lvl}\n` +
           `> **Lượt thích:** ${liked}\n` +
           `> **Trạng thái:** ${status}\n` +
@@ -2038,20 +2238,40 @@ if (command === "search") {
    // ===================== LỆNH !TODOI =====================
 if (command === "todoi") {
 
+    // ID kênh được phép sử dụng lệnh tổ đội
+    const allowedTodoiChannel = "1482498908457406535";
+
+    // 1. Kiểm tra xem có đúng kênh cho phép không
+    if (msg.channel.id !== allowedTodoiChannel) {
+        const channelWarn = await msg.reply(
+            `❌ Lệnh gửi tin nhắn tổ đội chỉ được dùng tại kênh: <#${allowedTodoiChannel}>!`
+        );
+        
+        // Tự động xóa cảnh báo và lệnh sai sau 5 giây
+        setTimeout(() => {
+            channelWarn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
+        return; // Dừng thực hiện lệnh
+    }
+
     const teamcode = args[0];
     const message = args.slice(1).join(" ");
 
-    // ❌ Sai cú pháp
+    // 2. Kiểm tra sai cú pháp
     if (!teamcode || !message) {
         const warn = await msg.reply(
             "❌ Sai cú pháp!\nVí dụ:\n`!todoi 1234567 hello team`"
         );
 
-        setTimeout(() => warn.delete().catch(() => {}), 4000);
+        setTimeout(() => {
+            warn.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
         return;
     }
 
-    // Loading
+    // ⏳ Loading
     const loading = await msg.reply(
         `💬 Đang gửi tin nhắn vào tổ đội...\n> TeamCode: **${teamcode}**`
     );
@@ -2059,7 +2279,6 @@ if (command === "todoi") {
     const apiUrl = `https://taycommunity.spcfy.eu/msg?teamcode=${teamcode}&message=${encodeURIComponent(message)}`;
 
     try {
-
         const res = await fetch(apiUrl);
         if (!res.ok) throw new Error("API lỗi");
 
@@ -2087,7 +2306,6 @@ if (command === "todoi") {
         });
 
     } catch (err) {
-
         console.error(err);
 
         const errorEmbed = new EmbedBuilder()
@@ -2103,6 +2321,12 @@ if (command === "todoi") {
             content: null,
             embeds: [errorEmbed]
         });
+        
+        // Xóa thông báo lỗi sau 5 giây để tránh rác kênh
+        setTimeout(() => {
+            loading.delete().catch(() => {});
+            msg.delete().catch(() => {});
+        }, 5000);
     }
 }
 // ===================== HẾT LỆNH !TODOI =====================
