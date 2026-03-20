@@ -525,12 +525,11 @@ if (command === "like") {
       `❌ Lệnh này chỉ được dùng tại kênh <#${allowedChannelId}>!`
     );
     
-    // Tự động xóa tin nhắn cảnh báo và lệnh sai sau 5 giây
     setTimeout(() => {
       channelWarn.delete().catch(() => {});
       msg.delete().catch(() => {});
     }, 5000);
-    return; // Dừng thực hiện lệnh
+    return; 
   }
 
   const uid = args[0];
@@ -592,13 +591,16 @@ if (command === "like") {
       });
 
     } else {
+      // Trường hợp MAX LIKE hoặc API từ chối
       const errMsg = await processing.edit(
         "⚠️ UID này đã **MAX LIKE** hoặc API không thể gửi thêm."
       );
 
+      // Xóa tin nhắn lỗi và tin nhắn của người dùng sau 10 giây
       setTimeout(() => {
         errMsg.delete().catch(() => {});
-      }, 10000);
+        msg.delete().catch(() => {});
+      }, 5000);
     }
 
   } catch (err) {
@@ -607,12 +609,15 @@ if (command === "like") {
       "❌ Không thể kết nối API Like."
     );
 
+    // Xóa tin nhắn lỗi và tin nhắn của người dùng sau 10 giây
     setTimeout(() => {
       errMsg.delete().catch(() => {});
-    }, 10000);
+      msg.delete().catch(() => {});
+    }, 5000);
   }
 }
 // ======= HẾT LỆNH LIKE =======
+
 
   // ======= LỆNH INFO =======
 if (command === "info") {
