@@ -2582,15 +2582,16 @@ client.login(process.env.TOKEN)
 
 
 // ====== EXPRESS KEEP-ALIVE ======
+const express = require('express');
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Render ưu tiên port 10000, nếu không có thì dùng 3000
+const PORT = process.env.PORT || 10000; 
 
-// Route ping
 app.get("/", (req, res) => {
   res.send("Bot is running!");
 });
 
-// Start server
-app.listen(PORT, () => {
+// Thêm '0.0.0.0' để Render dễ dàng "thông tuyến" hơn
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Ping server online on port ${PORT}`);
 });
